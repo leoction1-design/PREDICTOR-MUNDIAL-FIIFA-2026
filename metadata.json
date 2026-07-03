@@ -1,0 +1,6 @@
+{
+  "name": "2026 FIFA SCORE PREDICT",
+  "description": "Un simulador predictivo interactivo para la Copa Mundial de la FIFA 2026 que evalúa el rendimiento por grupos, eliminatorias y goleo usando 18 agentes de IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

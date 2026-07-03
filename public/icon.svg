@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Background Drop Shadow for the Icon -->
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#020617" flood-opacity="0.3" />
+    </filter>
+    <radialGradient id="sphereGrad" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="60%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#cbd5e1" />
+    </radialGradient>
+    <radialGradient id="innerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="80%" stop-color="#ffffff" stop-opacity="0" />
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.15" />
+    </radialGradient>
+    <linearGradient id="redSwoosh" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3b30" />
+      <stop offset="100%" stop-color="#c31432" />
+    </linearGradient>
+    <linearGradient id="blueSwoosh" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#007aff" />
+      <stop offset="100%" stop-color="#243b55" />
+    </linearGradient>
+    <linearGradient id="greenSwoosh" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34c759" />
+      <stop offset="100%" stop-color="#11998e" />
+    </linearGradient>
+  </defs>
+
+  <!-- Solid Dark Slate Icon Container Canvas -->
+  <rect width="512" height="512" rx="112" fill="#0f172a" />
+
+  <!-- Outer ambient aura -->
+  <circle cx="256" cy="256" r="220" fill="#1e293b" opacity="0.3" />
+
+  <!-- Main Ball Group with Shadow -->
+  <g filter="url(#shadow)">
+    <!-- White Soccer Sphere -->
+    <circle cx="256" cy="256" r="180" fill="url(#sphereGrad)" />
+    
+    <!-- Soccer ball panel seams (Subtle slate grey grid) -->
+    <path d="M256,76 C160,160 160,352 256,436" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" opacity="0.4" />
+    <path d="M256,76 C352,160 352,352 256,436" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" opacity="0.4" />
+    <path d="M76,256 C160,160 352,160 436,256" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" opacity="0.4" />
+    <path d="M76,256 C160,352 352,352 436,256" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" opacity="0.4" />
+
+    <!-- Red dynamic ribbon/swoosh -->
+    <path d="M120,200 C180,130 290,110 370,150 C300,170 230,220 190,300 C165,270 135,235 120,200 Z" fill="url(#redSwoosh)" opacity="0.95" />
+
+    <!-- Blue dynamic ribbon/swoosh -->
+    <path d="M190,300 C240,210 360,190 430,250 C380,290 310,320 256,400 C225,360 205,330 190,300 Z" fill="url(#blueSwoosh)" opacity="0.95" />
+
+    <!-- Green dynamic ribbon/swoosh -->
+    <path d="M256,400 C300,320 400,330 430,390 C370,430 280,430 256,400 Z" fill="url(#greenSwoosh)" opacity="0.95" />
+
+    <!-- Inner spherical shading -->
+    <circle cx="256" cy="256" r="180" fill="url(#innerGlow)" />
+
+    <!-- Glossy Highlight Overlay -->
+    <ellipse cx="190" cy="140" rx="70" ry="35" transform="rotate(-35 190 140)" fill="#ffffff" opacity="0.4" />
+  </g>
+</svg>
