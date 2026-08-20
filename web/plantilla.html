@@ -1,0 +1,366 @@
+<title>GolCast</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   Sistema cromático: el color NO decora, ordena.
+   Cinco hues fijos mapean el ranking de probabilidad — el más probable en
+   coral, y de ahí ámbar, menta, violeta, índigo. La banda de cada partido
+   es literalmente ese espectro, así que la posición en el arcoíris ES la
+   posición en la distribución. Fondo índigo profundo en vez de negro:
+   más saturado, más moderno, y hace cantar los cinco hues.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  --ground:#E8E8EB; --surface:#FFFFFF; --raise:#F6F6F8; --sunk:#DCDCE1;
+  --ink:#131316; --ink-2:#3F3F46; --muted:#71717A;
+  --line:#D0D0D6; --hair:#E4E4E9;
+  --c1:#E11D48; --c2:#D97706; --c3:#0D9488; --c4:#6D28D9; --c5:#3730A3;
+  --c1-wash:#FBE4E9; --glow:transparent;
+  --win:#0F8A5F; --draw:#8B87A8; --loss:#D14343;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#17171A; --surface:#202024; --raise:#28282E; --sunk:#131316;
+  --ink:#F4F4F6; --ink-2:#C3C3CC; --muted:#8A8A96;
+  --line:#33333B; --hair:#2A2A31;
+  --c1:#FF4D6D; --c2:#FFB703; --c3:#00E5B0; --c4:#9B7BFF; --c5:#5A4FCF;
+  --c1-wash:#3A1F27; --glow:#FF4D6D;
+  --win:#00D68F; --draw:#8B84B8; --loss:#FF6B6B;
+}}
+:root[data-theme="dark"]{
+  --ground:#17171A; --surface:#202024; --raise:#28282E; --sunk:#131316;
+  --ink:#F4F4F6; --ink-2:#C3C3CC; --muted:#8A8A96;
+  --line:#33333B; --hair:#2A2A31;
+  --c1:#FF4D6D; --c2:#FFB703; --c3:#00E5B0; --c4:#9B7BFF; --c5:#5A4FCF;
+  --c1-wash:#3A1F27; --glow:#FF4D6D;
+  --win:#00D68F; --draw:#8B84B8; --loss:#FF6B6B;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--body);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 90px;display:flex;flex-direction:column;gap:20px}
+
+/* ══ Hero: el espectro como firma ══ */
+.hero{position:relative;padding:52px 0 34px}
+.hero-in{position:relative;display:flex;flex-direction:column;gap:14px}
+.eyebrow{display:flex;align-items:center;gap:9px;font-family:var(--display);font-weight:700;
+  font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.eyebrow::before{content:"";width:36px;height:3px;border-radius:2px;
+  background:linear-gradient(90deg,var(--c1),var(--c2),var(--c3),var(--c4))}
+.mark{font-family:var(--display);font-weight:800;font-size:clamp(52px,10vw,88px);
+  letter-spacing:-.025em;line-height:.88;margin:0;
+  background:linear-gradient(100deg,var(--c1) 8%,var(--c2) 42%,var(--c3) 74%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{margin:0;max-width:52ch;color:var(--ink-2);font-size:16.5px}
+.lede b{color:var(--ink);font-weight:600}
+
+/* ══ Marcador de contexto ══ */
+.board{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:14px;
+  background:var(--surface);overflow:hidden}
+.stat{flex:1 1 152px;padding:15px 18px;border-right:1px solid var(--hair);
+  display:flex;flex-direction:column;gap:2px;position:relative}
+.stat:last-child{border-right:0}
+.stat::before{content:"";position:absolute;inset:auto 0 0 0;height:3px;background:var(--bar,transparent)}
+.stat.s1{--bar:var(--c1)} .stat.s2{--bar:var(--c3)} .stat.s3{--bar:var(--c2)} .stat.s4{--bar:var(--c5)}
+.stat.vs{background:var(--sunk)}
+.k{font-family:var(--display);font-weight:700;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted)}
+.val{font-family:var(--mono);font-size:25px;font-weight:600;letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums}
+.val.hot{color:var(--c1)}
+.sub{font-size:12px;color:var(--muted)}
+
+/* ══ Filtros ══ */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  position:sticky;top:0;z-index:20;padding:12px 0 10px;
+  background:linear-gradient(var(--ground) 76%,transparent)}
+select,input[type=search]{font-family:var(--body);font-size:13.5px;font-weight:500;
+  padding:9px 13px;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);transition:border-color .15s}
+select:hover,input:hover{border-color:var(--c4)}
+input[type=search]{flex:1;min-width:150px}
+select:focus-visible,input:focus-visible{outline:2px solid var(--c1);outline-offset:1px}
+.tally{font-family:var(--mono);font-size:12px;color:var(--muted);
+  font-variant-numeric:tabular-nums;margin-left:auto}
+
+/* ══ Jornada ══ */
+.day{display:flex;flex-direction:column;gap:7px}
+.day-h{position:sticky;top:60px;z-index:10;display:flex;align-items:center;gap:11px;
+  padding:9px 2px 8px;background:var(--ground)}
+.day-h::after{content:"";flex:1;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,var(--c4),transparent)}
+.day-d{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:.01em;
+  text-transform:uppercase}
+.day-n{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+/* ══ Partido ══ */
+.m{background:var(--surface);border:1px solid var(--hair);border-radius:13px;
+  padding:12px 15px 0;display:grid;gap:2px 15px;
+  grid-template-columns:54px minmax(136px,1fr) 108px 100px;align-items:center;
+  transition:border-color .16s,transform .16s}
+.m:hover{border-color:var(--c4);transform:translateY(-1px)}
+.m-time{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.m-date{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);opacity:.8}
+.m-lg{display:inline-block;font-family:var(--display);font-weight:700;font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--c4);
+  background:var(--sunk);padding:2px 6px;border-radius:5px;margin-top:3px}
+.m-teams{display:flex;flex-direction:column;gap:3px;min-width:0}
+.t{display:flex;align-items:center;gap:8px;min-width:0}
+.t-n{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-n.b{font-weight:500;color:var(--ink-2)}
+.streak{display:flex;gap:2.5px;flex-shrink:0}
+.streak i{width:5px;height:5px;border-radius:50%;display:block}
+.streak i.w{background:var(--win)} .streak i.d{background:var(--draw)} .streak i.l{background:var(--loss)}
+.m-pick{text-align:right}
+.m-score{font-family:var(--mono);font-size:23px;font-weight:600;letter-spacing:-.05em;
+  font-variant-numeric:tabular-nums;color:var(--c1);display:block;line-height:1.05;
+  text-shadow:0 0 22px color-mix(in srgb,var(--glow) 45%,transparent)}
+.m-conf{display:block;font-family:var(--mono);font-size:17px;font-weight:600;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.15}
+.m-conf small{font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);margin-left:4px}
+.m-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.src{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;padding:3px 8px;border-radius:99px}
+.src.k{background:var(--c1-wash);color:var(--c1)}
+.src.o{background:var(--sunk);color:var(--muted)}
+.m-fb{font-family:var(--mono);font-size:10px;color:var(--muted)}
+
+/* ══ La banda: espectro de probabilidad ══
+   Cada tramo lleva el hue de su puesto. Recorriendo la lista se lee el perfil:
+   un coral ancho es un partido definido, cinco tramos parejos es moneda al aire. */
+.band{grid-column:1/-1;display:flex;height:11px;margin:11px -15px 0;overflow:hidden}
+.band span{display:block}
+.band .r1{background:var(--c1)} .band .r2{background:var(--c2)}
+.band .r3{background:var(--c3)} .band .r4{background:var(--c4)}
+.band .r5{background:var(--c5)} .band .rest{background:var(--sunk)}
+.band span+span{border-left:1px solid var(--surface)}
+.legend{grid-column:1/-1;display:flex;justify-content:space-between;gap:10px;
+  padding:8px 0 11px;font-family:var(--mono);font-size:10.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.alts{display:flex;gap:9px;flex-wrap:wrap}
+.alts span{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.alts i{width:6px;height:6px;border-radius:2px;display:block}
+.alts i.r2{background:var(--c2)} .alts i.r3{background:var(--c3)} .alts i.r4{background:var(--c4)}
+.odds b{font-weight:600;color:var(--ink-2)}
+
+.more{display:flex;justify-content:center;padding-top:16px}
+button{font-family:var(--display);font-weight:700;font-size:13.5px;letter-spacing:.1em;
+  text-transform:uppercase;cursor:pointer;color:#FFF;border:0;border-radius:10px;
+  padding:13px 30px;background:linear-gradient(100deg,var(--c1),var(--c2));
+  transition:filter .16s,transform .16s}
+button:hover{filter:brightness(1.1);transform:translateY(-1px)}
+button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
+
+.note{background:var(--surface);border:1px solid var(--line);border-radius:13px;
+  padding:19px 21px;display:flex;flex-direction:column;gap:11px;margin-top:10px;
+  position:relative;overflow:hidden}
+.note::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;
+  background:linear-gradient(180deg,var(--c1),var(--c2),var(--c3),var(--c4))}
+.note h2{margin:0 0 0 6px;font-family:var(--display);font-size:16px;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;
+  background:linear-gradient(90deg,var(--c1),var(--c2));-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.note p{margin:0 0 0 6px;font-size:13.5px;color:var(--ink-2);max-width:74ch}
+.note b{color:var(--ink);font-weight:600}
+.empty{padding:52px 0;text-align:center;color:var(--muted)}
+
+@media (max-width:760px){
+  .stat{flex:1 1 47%;border-bottom:1px solid var(--hair)}
+  .m{grid-template-columns:1fr auto;padding:13px 15px 0}
+  .m-when{grid-column:1}.m-meta{grid-column:2}
+  .m-teams{grid-column:1/-1;margin-top:5px}
+  .m-pick{grid-column:1/-1;text-align:left;display:flex;align-items:baseline;gap:10px;margin-top:3px}
+  .band{margin:11px -15px 0}
+  .day-h{top:58px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-in">
+      <span class="eyebrow">Cualquier liga &middot; Cualquier partido</span>
+      <h1 class="mark">GolCast</h1>
+      <p class="lede">El marcador más probable de cada partido — y debajo, <b>la distribución
+        entera en color</b>. Un marcador solo, sin su número, se lee como una certeza que no es.</p>
+    </div>
+  </header>
+
+  <section class="board" aria-label="Contexto del modelo">
+    <div class="stat s1"><span class="k">Partidos</span><span class="val" id="v-n">—</span>
+      <span class="sub" id="v-lg">—</span></div>
+    <div class="stat s2"><span class="k">Entrenado con</span><span class="val" id="v-tr">—</span>
+      <span class="sub">resultados reales</span></div>
+    <div class="stat s3"><span class="k">Acierto del modelo</span><span class="val hot">12,5%</span>
+      <span class="sub">marcador exacto</span></div>
+    <div class="stat s4 vs"><span class="k">Decir siempre 1-1</span><span class="val">10,7%</span>
+      <span class="sub">sin modelo alguno</span></div>
+  </section>
+
+  <div class="filters">
+    <select id="f-date" aria-label="Filtrar por fecha"></select>
+    <select id="f-league" aria-label="Filtrar por liga"></select>
+    <select id="f-sort" aria-label="Ordenar">
+      <option value="p">Más probables primero</option>
+      <option value="d">Por jornada</option>
+    </select>
+    <select id="f-src" aria-label="Filtrar por fuente">
+      <option value="">Todas las fuentes</option>
+      <option value="mkt">Con cuotas</option>
+      <option value="mod">Sin cuotas</option>
+    </select>
+    <input type="search" id="f-q" placeholder="Buscar equipo…" aria-label="Buscar equipo">
+    <span class="tally" id="tally"></span>
+  </div>
+
+  <div id="list" style="display:flex;flex-direction:column;gap:20px"></div>
+  <div class="more"><button type="button" id="more">Ver más</button></div>
+
+  <section class="note">
+    <h2>Cómo leer la banda</h2>
+    <p>Los colores no decoran: <b>ordenan</b>. Coral es el marcador más probable, y de ahí ámbar,
+      menta, violeta e índigo según su puesto. El ancho de cada tramo es su probabilidad, así que
+      un coral ancho es un partido definido y cinco tramos parejos son una moneda al aire.</p>
+    <p>Por eso el marcador de la derecha, aunque sea el más probable, ronda el <b>10-20%</b>:
+      falla la mayoría de las veces. El listón honesto no es acertar mucho, es <b>batir a «decir
+      siempre 1-1»</b>, que acierta un 10,7% sin modelo. La ventaja medida sobre 665 partidos
+      fuera de muestra es 12,5% contra 10,7% — real y de menos de dos puntos, por eso está arriba
+      al mismo tamaño.</p>
+    <p><b>Mercado</b> son partidos donde el reparto 1X2 sale de las cuotas y la forma del marcador
+      del modelo. <b>Modelo</b> son los que no tenían cuotas. Los puntos junto a cada equipo son
+      sus últimos cinco resultados, el más reciente primero.</p>
+  </section>
+</div>
+
+<script>
+const MAXG=8,RHO=-0.05,FACT=[1,1,2,6,24,120,720,5040,40320];
+const pois=(l,k)=>Math.exp(-l)*Math.pow(l,k)/FACT[k];
+function tau(x,y,a,b,r){
+  if(x===0&&y===0)return 1-a*b*r; if(x===0&&y===1)return 1+a*r;
+  if(x===1&&y===0)return 1+b*r;   if(x===1&&y===1)return 1-r; return 1;
+}
+function grid(a,b){
+  const g=[];let t=0;
+  for(let x=0;x<=MAXG;x++){g[x]=[];for(let y=0;y<=MAXG;y++){
+    const v=pois(a,x)*pois(b,y)*tau(x,y,a,b,RHO);g[x][y]=v;t+=v;}}
+  for(let x=0;x<=MAXG;x++)for(let y=0;y<=MAXG;y++)g[x][y]/=t;return g;
+}
+function outcomes(g){let h=0,d=0,a=0;
+  for(let x=0;x<=MAXG;x++)for(let y=0;y<=MAXG;y++){
+    if(x>y)h+=g[x][y];else if(x===y)d+=g[x][y];else a+=g[x][y];}
+  return[h,d,a];}
+const devig=o=>{const i=o.map(v=>1/v),s=i[0]+i[1]+i[2];return i.map(v=>v/s);};
+function predict(la,lb,odds){
+  let a=Math.max(.15,la),b=Math.max(.15,lb);
+  if(odds&&odds.length===3&&odds.every(o=>o>1)){
+    const m=devig(odds),tgt=(m[0]+m[2])>0?m[0]/(m[0]+m[2]):.5,T=Math.max(.4,a+b);
+    let lo=-T+.2,hi=T-.2,D=a-b;
+    for(let i=0;i<32;i++){D=(lo+hi)/2;
+      const o2=outcomes(grid(Math.max(.05,(T+D)/2),Math.max(.05,(T-D)/2)));
+      const r=(o2[0]+o2[2])>0?o2[0]/(o2[0]+o2[2]):.5;
+      if(r<tgt)lo=D;else hi=D;}
+    a=Math.max(.05,(T+D)/2);b=Math.max(.05,(T-D)/2);}
+  const g=grid(a,b),cells=[];
+  for(let x=0;x<=MAXG;x++)for(let y=0;y<=MAXG;y++)cells.push([x+"-"+y,g[x][y]]);
+  cells.sort((p,q)=>q[1]-p[1]);
+  return{top:cells.slice(0,5),p:outcomes(g)};
+}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const pc=v=>(100*v).toFixed(1).replace(".",",");
+const MESES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const DIAS=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+function fechaLarga(md){const[m,d]=md.split("-").map(Number);
+  return DIAS[new Date(2026,m-1,d).getDay()]+" "+d+" "+MESES[m-1];}
+const streak=s=>'<span class="streak" title="Últimos resultados, el más reciente primero">'+
+  [...s].map(c=>`<i class="${c==="W"?"w":c==="D"?"d":"l"}"></i>`).join("")+'</span>';
+
+const ROWS=DATA.rows;
+$("v-n").textContent=ROWS.length;
+$("v-tr").textContent=DATA.entren.partidos.toLocaleString("es-ES");
+const dates=[...new Set(ROWS.map(r=>r[0]))].sort();
+const leagues=[...new Set(ROWS.map(r=>r[2]))].filter(Boolean).sort();
+$("v-lg").textContent=leagues.length+" ligas";
+$("f-date").innerHTML='<option value="">Todas las fechas</option>'+dates.map(d=>
+  `<option value="${d}">${fechaLarga(d)} · ${ROWS.filter(r=>r[0]===d).length}</option>`).join("");
+$("f-league").innerHTML='<option value="">Todas las ligas</option>'+
+  leagues.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join("");
+
+/* Ordenar por probabilidad obliga a predecir los 949, y volver a hacerlo en
+   cada render sería absurdo. Se calcula una vez al arrancar y se reutiliza:
+   el coste está en el arranque, no en cada tecla del buscador. */
+const PRED=(()=>{
+  const t0=performance.now();
+  const out=ROWS.map(r=>predict(r[5],r[6],r[7]||null));
+  console.info(`GolCast · ${out.length} predicciones en ${Math.round(performance.now()-t0)} ms`);
+  return out;
+})();
+ROWS.forEach((r,i)=>{r.i=i;});
+
+let shown=35;
+function filtered(){
+  const d=$("f-date").value,l=$("f-league").value,s=$("f-src").value,
+        q=$("f-q").value.trim().toLowerCase();
+  return ROWS.filter(r=>{
+    if(d&&r[0]!==d)return false; if(l&&r[2]!==l)return false;
+    if(s==="mkt"&&!r[7])return false; if(s==="mod"&&r[7])return false;
+    if(q&&!(r[3]+" "+r[4]).toLowerCase().includes(q))return false; return true;})
+  .sort($("f-sort").value==="p"
+    ? (a,b)=>PRED[b.i].top[0][1]-PRED[a.i].top[0][1]   // más concentrada primero
+    : (a,b)=>(a[0]+a[1]).localeCompare(b[0]+b[1]));
+}
+function matchHTML(r,conFecha){
+  const[date,time,lg,home,away,la,lb,odds,fb,fH,fA]=r;
+  const res=PRED[r.i],top=res.top,[ph,pd,pa]=res.p;
+  const tail=Math.max(0,1-top.reduce((s,c)=>s+c[1],0));
+  const band=top.map((c,i)=>
+    `<span class="r${i+1}" style="width:${100*c[1]}%" title="${c[0]} · ${pc(c[1])}%"></span>`).join("")
+    +`<span class="rest" style="width:${100*tail}%" title="resto ${pc(tail)}%"></span>`;
+  const alts=top.slice(1,4).map((c,i)=>
+    `<span><i class="r${i+2}"></i>${c[0]} ${pc(c[1])}%</span>`).join("");
+  return `<article class="m">
+    <div class="m-when">${conFecha?`<span class="m-date">${date.slice(3)}/${date.slice(0,2)}</span>`:""}<span class="m-time">${time}</span><br><span class="m-lg">${esc(lg)}</span></div>
+    <div class="m-teams">
+      <div class="t"><span class="t-n">${esc(home)}</span>${streak(fH)}</div>
+      <div class="t"><span class="t-n b">${esc(away)}</span>${streak(fA)}</div></div>
+    <div class="m-pick"><span class="m-score">${top[0][0]}</span>
+      <span class="m-conf">${pc(top[0][1])}%<small>probable</small></span></div>
+    <div class="m-meta"><span class="src ${odds?"k":"o"}">${odds?"Mercado":"Modelo"}</span>
+      ${fb?`<span class="m-fb">Forebet ${fb}</span>`:""}</div>
+    <div class="band">${band}</div>
+    <div class="legend"><span class="alts">${alts}</span>
+      <span class="odds"><b>1</b> ${Math.round(100*ph)}% &nbsp; <b>X</b> ${Math.round(100*pd)}% &nbsp; <b>2</b> ${Math.round(100*pa)}%</span>
+    </div></article>`;
+}
+function render(){
+  const f=filtered();
+  $("tally").textContent=`${f.length} de ${ROWS.length}`;
+  if(!f.length){$("list").innerHTML='<p class="empty">Ningún partido coincide con ese filtro.</p>';
+    $("more").style.display="none";return;}
+  const slice=f.slice(0,shown);
+  if($("f-sort").value==="p"){
+    $("list").innerHTML=`<section class="day">${slice.map(r=>matchHTML(r,true)).join("")}</section>`;
+    const n=f.length-shown;
+    $("more").style.display=n>0?"":"none";
+    $("more").textContent=`Ver más · quedan ${n}`;
+    return;
+  }
+  const groups=[];
+  slice.forEach(r=>{
+    if(!groups.length||groups[groups.length-1].d!==r[0])groups.push({d:r[0],rows:[]});
+    groups[groups.length-1].rows.push(r);});
+  $("list").innerHTML=groups.map(g=>`<section class="day">
+      <header class="day-h"><span class="day-d">${fechaLarga(g.d)}</span>
+        <span class="day-n">${f.filter(r=>r[0]===g.d).length} partidos</span></header>
+      ${g.rows.map(r=>matchHTML(r,false)).join("")}</section>`).join("");
+  const left=f.length-shown;
+  $("more").style.display=left>0?"":"none";
+  $("more").textContent=`Ver más · quedan ${left}`;
+}
+["f-date","f-league","f-src","f-q","f-sort"].forEach(id=>
+  $(id).addEventListener("input",()=>{shown=35;render();}));
+$("more").addEventListener("click",()=>{shown+=70;render();});
+render();
+</script>

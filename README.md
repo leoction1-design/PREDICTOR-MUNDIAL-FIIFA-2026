@@ -1,4 +1,4 @@
-# Marcador Probable
+# GolCast
 
 Pronósticos de marcador para partidos de fútbol de cualquier liga, acompañados de la
 probabilidad que los respalda.

@@ -1,8 +1,8 @@
 {
   "id": "/index.html",
   "short_name": "ScorePredict",
-  "name": "Marcador Probable",
-  "description": "Pronósticos de fútbol con su probabilidad",
+  "name": "GolCast",
+  "description": "Marcadores probables para cualquier liga",
   "start_url": "/index.html",
   "scope": "/",
   "lang": "es",
@@ -24,8 +24,8 @@
   "related_applications": [
     {
       "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.leonardo.marcadorprobable",
-      "id": "com.leonardo.marcadorprobable"
+      "url": "https://play.google.com/store/apps/details?id=com.leonardo.golcast",
+      "id": "com.leonardo.golcast"
     }
   ],
   "scope_extensions": [
@@ -115,14 +115,14 @@
       "sizes": "640x1136",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Marcador Probable - Simulador de Partidos Móvil"
+      "label": "GolCast - Simulador de Partidos Móvil"
     },
     {
       "src": "/screenshot-desktop.png",
       "sizes": "1280x800",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Marcador Probable - Dashboard Principal en Escritorio"
+      "label": "GolCast - Dashboard Principal en Escritorio"
     }
   ]
 }

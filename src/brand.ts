@@ -13,15 +13,15 @@
  */
 export const BRAND = {
   /** Primera palabra del logotipo, en blanco. */
-  nombre: "Marcador",
+  nombre: "Gol",
   /** Segunda palabra, la que lleva el degradado. */
-  acento: "Probable",
+  acento: "Cast",
   /** Nombre completo para títulos y metadatos. */
-  completo: "Marcador Probable",
+  completo: "GolCast",
   /** Bajo el logotipo. Dice lo que hace, sin prometer certeza. */
-  descripcion: "Pronósticos de fútbol con su probabilidad",
+  descripcion: "Marcadores probables para cualquier liga",
   /** Cinta superior. Antes anunciaba un torneo concreto. */
   cinta: "CUALQUIER LIGA · CUALQUIER PARTIDO",
   /** Debe coincidir con appId en capacitor.config.ts y strings.xml. */
-  appId: "com.leonardo.marcadorprobable",
+  appId: "com.leonardo.golcast",
 } as const;

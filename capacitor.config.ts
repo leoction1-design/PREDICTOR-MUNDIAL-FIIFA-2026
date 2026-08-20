@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.leonardo.marcadorprobable',
-  appName: 'Marcador Probable',
+  appId: 'com.leonardo.golcast',
+  appName: 'GolCast',
   webDir: 'dist'
 };
 

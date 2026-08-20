@@ -1,9 +1,9 @@
-# Marcador Probable — Empaquetado Android
+# GolCast — Empaquetado Android
 
 ## Qué se hizo
 
 1. Se instaló Capacitor (`@capacitor/core`, `@capacitor/android`, `@capacitor/cli`) sobre el proyecto Vite + React ya existente.
-2. Se inicializó con un **applicationId único**: `com.leonardo.marcadorprobable`
+2. Se inicializó con un **applicationId único**: `com.leonardo.golcast`
    (distinto de `com.plataforma.ruta` usado por LLEVA, para evitar el conflicto de instalación que ya tuviste antes).
 3. Se generó la carpeta nativa `android/` completa (Gradle, AndroidManifest, recursos, etc.) y se sincronizó el build web (`dist/`) dentro de ella.
 4. **Los PNG originales (`icon-192.png`, `icon-512.png`, los screenshots) llegaron corruptos dentro del .zip** — el byte de firma PNG estaba reemplazado por un carácter de reemplazo UTF-8 (probablemente un problema al exportar/comprimir el proyecto). No afecta a la app en sí (esos PNG solo se usaban en `manifest.json` para PWA, no dentro del código React), pero no servían como fuente para el ícono nativo. Por eso el ícono de la app Android se regeneró a partir de `public/icon.svg` (que sí estaba intacto), en todas las resoluciones (mdpi a xxxhdpi), incluyendo ícono adaptable, ícono redondo y splash screen con tu color de tema (`#0F172A`).
@@ -19,7 +19,7 @@ Ya te dejé el workflow en `.github/workflows/build-apk.yml`. Pasos:
 
 1. Sube este proyecto a tu repo `leoction1-design/PREDICTOR-MUNDIAL-FIIFA-2026` en GitHub (reemplazando el contenido actual, o en una rama nueva).
 2. En GitHub, ve a la pestaña **Actions** del repo — el workflow "Build Android APK" corre automáticamente al hacer push a `main`/`master` (o dispáralo manualmente con el botón "Run workflow").
-3. Cuando termine (uno o dos minutos), entra al run finalizado y descarga el artefacto **`marcador-probable-debug-apk`** — es un .zip que contiene el `app-debug.apk` listo para instalar.
+3. Cuando termine (uno o dos minutos), entra al run finalizado y descarga el artefacto **`golcast-debug-apk`** — es un .zip que contiene el `app-debug.apk` listo para instalar.
 4. Ese APK debug ya se puede instalar directo en cualquier Android (activando "Instalar apps de orígenes desconocidos").
 
 ## Opción B — Android Studio en tu computadora

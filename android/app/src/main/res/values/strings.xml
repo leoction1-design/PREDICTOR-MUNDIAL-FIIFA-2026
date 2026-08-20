@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Marcador Probable</string>
-    <string name="title_activity_main">Marcador Probable</string>
-    <string name="package_name">com.leonardo.marcadorprobable</string>
-    <string name="custom_url_scheme">com.leonardo.marcadorprobable</string>
+    <string name="app_name">GolCast</string>
+    <string name="title_activity_main">GolCast</string>
+    <string name="package_name">com.leonardo.golcast</string>
+    <string name="custom_url_scheme">com.leonardo.golcast</string>
 </resources>
