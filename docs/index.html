@@ -1,3 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Marcadores probables de fútbol con la probabilidad de cada uno.">
+<!-- La barra del sistema sigue al tema; sin esto el móvil enmarca la página en el color contrario -->
+<meta name="theme-color" content="#E8E8EB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17171A" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GolCast">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono.svg">
+<link rel="apple-touch-icon" href="icono.svg">
+<style>
+  /* Notch y barra de gestos: sin esto el contenido se mete debajo del sistema */
+  body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+  .wrap{padding-bottom:calc(90px + env(safe-area-inset-bottom)) !important}
+  /* Objetivos tactiles: 44 px es el minimo comodo con el dedo */
+  select,input[type=search]{min-height:44px}
+  button{min-height:48px}
+</style>
+</head>
+<body>
 <title>GolCast</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -212,7 +237,7 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
       <option value="mod">Sin cuotas</option>
     </select>
     <input type="search" id="f-q" placeholder="Buscar equipo…" aria-label="Buscar equipo">
-    <span class="tally" id="tally"></span><span class="tally" style="margin-left:0" title="Se actualiza cada mañana">· act. 20/08/2026 15:06</span>
+    <span class="tally" id="tally"></span><span class="tally" style="margin-left:0" title="Se actualiza cada mañana">· act. 20/08/2026 15:12</span>
   </div>
 
   <div id="list" style="display:flex;flex-direction:column;gap:20px"></div>
@@ -368,3 +393,6 @@ function render(){
 $("more").addEventListener("click",()=>{shown+=70;render();});
 render();
 </script>
+
+</body>
+</html>

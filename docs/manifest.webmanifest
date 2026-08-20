@@ -1,0 +1,17 @@
+{
+ "name": "GolCast",
+ "short_name": "GolCast",
+ "description": "Marcadores probables de fútbol con la probabilidad de cada uno.",
+ "start_url": ".",
+ "scope": ".",
+ "display": "standalone",
+ "background_color": "#17171A",
+ "theme_color": "#17171A",
+ "icons": [
+  {
+   "src": "icono.svg",
+   "sizes": "any",
+   "type": "image/svg+xml"
+  }
+ ]
+}
