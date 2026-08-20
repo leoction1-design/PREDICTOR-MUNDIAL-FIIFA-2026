@@ -5,6 +5,7 @@
 
 import { Match } from "./types";
 import { TEAMS, AGENTS } from "./data";
+import { desdeLambdas, Prediccion } from "./dixonColes";
 
 // Seeded deterministic random number generator for consistent predictions per match + agent
 export function seededRandom(matchId: string, agentId: string): () => number {
@@ -49,10 +50,10 @@ export function getFormBonus(teamCode: string, allMatches: Match[]): number {
 }
 
 // Predict a single match with an agent
-export function predictMatch(match: Match, agentId: string, allMatches: Match[] = []): { scoreA: number; scoreB: number } {
+export function predictMatch(match: Match, agentId: string, allMatches: Match[] = []): Prediccion {
   const teamA = TEAMS[match.teamA];
   const teamB = TEAMS[match.teamB];
-  if (!teamA || !teamB) return { scoreA: 0, scoreB: 0 };
+  if (!teamA || !teamB) return desdeLambdas(1.35, 1.35);
 
   const rng = seededRandom(match.id, agentId);
   const rankDiff = teamB.rank - teamA.rank; // positive = A is better (smaller rank number)
@@ -175,19 +176,18 @@ export function predictMatch(match: Match, agentId: string, allMatches: Match[] 
       break;
   }
 
-  // Final deterministic score with controlled random noise
-  const scoreA = Math.max(0, Math.round(lambdaA + (rng() - 0.5) * 0.9));
-  const scoreB = Math.max(0, Math.round(lambdaB + (rng() - 0.5) * 0.9));
-  return { scoreA, scoreB };
+  // El marcador sale de la distribucion completa, no de redondear lambda con ruido.
+  // Aquel redondeo hacia imposibles 1-0, 0-1 y 0-0 - los tres marcadores mas comunes del
+  // futbol real. Las lambdas ya llevan aplicado el modificador del agente.
+  return desdeLambdas(lambdaA, lambdaB);
 }
 
 // Consensus prediction: average of all agents
-export function predictConsensus(match: Match, allMatches: Match[] = []): { scoreA: number; scoreB: number } {
+export function predictConsensus(match: Match, allMatches: Match[] = []): Prediccion {
+  // Se promedian las lambdas, no los marcadores ya redondeados: redondear antes de promediar
+  // y otra vez despues perdia informacion dos veces.
   const predictions = AGENTS.map((agent) => predictMatch(match, agent.id, allMatches));
-  const avgA = predictions.reduce((sum, p) => sum + p.scoreA, 0) / predictions.length;
-  const avgB = predictions.reduce((sum, p) => sum + p.scoreB, 0) / predictions.length;
-  return {
-    scoreA: Math.round(avgA),
-    scoreB: Math.round(avgB),
-  };
+  const avgA = predictions.reduce((sum, p) => sum + p.lambda.A, 0) / predictions.length;
+  const avgB = predictions.reduce((sum, p) => sum + p.lambda.B, 0) / predictions.length;
+  return desdeLambdas(avgA, avgB);
 }

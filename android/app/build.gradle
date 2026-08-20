@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.leonardo.fifapredictor2026"
+    namespace = "com.leonardo.marcadorprobable"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.leonardo.fifapredictor2026"
+        applicationId "com.leonardo.marcadorprobable"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -1,8 +1,8 @@
 {
   "id": "/index.html",
   "short_name": "ScorePredict",
-  "name": "2026 FIFA Score Predict",
-  "description": "Simulador y Predictor del Mundial 2026",
+  "name": "Marcador Probable",
+  "description": "Pronósticos de fútbol con su probabilidad",
   "start_url": "/index.html",
   "scope": "/",
   "lang": "es",
@@ -24,8 +24,8 @@
   "related_applications": [
     {
       "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.scorepredict.fifa2026",
-      "id": "com.scorepredict.fifa2026"
+      "url": "https://play.google.com/store/apps/details?id=com.leonardo.marcadorprobable",
+      "id": "com.leonardo.marcadorprobable"
     }
   ],
   "scope_extensions": [
@@ -52,7 +52,7 @@
     {
       "name": "Calendario de Partidos",
       "short_name": "Partidos",
-      "description": "Ver partidos y calendario del Mundial",
+      "description": "Ver partidos y calendario",
       "url": "/index.html?tab=partidos",
       "icons": [
         {
@@ -115,14 +115,14 @@
       "sizes": "640x1136",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "2026 FIFA Score Predict - Simulador de Partidos Móvil"
+      "label": "Marcador Probable - Simulador de Partidos Móvil"
     },
     {
       "src": "/screenshot-desktop.png",
       "sizes": "1280x800",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "2026 FIFA Score Predict - Dashboard Principal en Escritorio"
+      "label": "Marcador Probable - Dashboard Principal en Escritorio"
     }
   ]
 }

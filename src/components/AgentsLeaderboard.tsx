@@ -98,7 +98,7 @@ export default function AgentsLeaderboard({ matches }: AgentsLeaderboardProps) {
           <Brain className="h-5 w-5 text-emerald-400" /> Clasificación de Agentes Predictivos
         </h2>
         <p className="text-xs text-blue-200">
-          Evaluación en tiempo real de los 18 algoritmos de predicción basados en los partidos completados del mundial.
+          Evaluación en tiempo real de los 18 algoritmos de predicción basados en los partidos ya completados.
         </p>
       </div>
 

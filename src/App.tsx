@@ -9,6 +9,7 @@ import { MATCHES, AGENTS, SQUADS } from "./data";
 import { predictConsensus, predictMatch } from "./simulator";
 
 // Components
+import { RealMatchesView } from "./components/RealMatchesView";
 import Header from "./components/Header";
 import TabNav from "./components/TabNav";
 import MatchesView from "./components/MatchesView";
@@ -63,6 +64,7 @@ function formatSimulatedTime(date: Date): string {
 
 const TABS = [
   { id: "partidos", label: "⚽ Partidos" },
+  { id: "reales", label: "🌍 Reales" },
   { id: "eliminatorias", label: "🏆 Simulador Playoffs" },
   { id: "grupos", label: "🏆 Grupos" },
   { id: "siguientes_fases", label: "🥊 Siguientes Fases" },
@@ -81,7 +83,7 @@ export default function App() {
     try {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab");
-      if (tabParam && ["partidos", "eliminatorias", "grupos", "siguientes_fases", "goleadores", "leaderboard"].includes(tabParam)) {
+      if (tabParam && ["partidos", "reales", "eliminatorias", "grupos", "siguientes_fases", "goleadores", "leaderboard"].includes(tabParam)) {
         setActiveTab(tabParam);
       }
     } catch (e) {
@@ -451,6 +453,9 @@ export default function App() {
               onSyncSingleMatch={handleSyncSingleMatch}
             />
           )}
+
+          {activeTab === "reales" && <RealMatchesView />}
+
 
           {activeTab === "grupos" && (
             <GroupsView matches={matches} />

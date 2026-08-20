@@ -5,7 +5,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Calendar, Play, Trophy, GitMerge, Award, Brain } from "lucide-react";
+import { Calendar, Play, Trophy, GitMerge, Award, Brain, Globe } from "lucide-react";
 
 interface Tab {
   id: string;
@@ -21,6 +21,7 @@ interface TabNavProps {
 // Map of tab IDs to corresponding Lucide icons
 const TAB_ICONS: Record<string, React.ComponentType<any>> = {
   partidos: Calendar,
+  reales: Globe,
   eliminatorias: Play,
   grupos: Trophy,
   siguientes_fases: GitMerge,
@@ -31,6 +32,7 @@ const TAB_ICONS: Record<string, React.ComponentType<any>> = {
 // Map of clean display names (removing the emoji prefix for the bottom nav)
 const TAB_LABELS_CLEAN: Record<string, string> = {
   partidos: "Partidos",
+  reales: "Reales",
   eliminatorias: "Simular",
   grupos: "Grupos",
   siguientes_fases: "Playoffs",

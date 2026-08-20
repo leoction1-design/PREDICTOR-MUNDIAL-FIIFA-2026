@@ -164,7 +164,53 @@ export default function MatchDetailModal({
                 <span className="block font-mono text-base font-black text-emerald-400 mt-0.5">
                   {consensus.scoreA} - {consensus.scoreB}
                 </span>
+                {/* Sin este número el marcador parece una certeza. Con él se lee como lo que
+                    es: el más probable de muchos, y aun así improbable. */}
+                <span className="block text-[9px] font-bold text-slate-400 mt-0.5">
+                  {(consensus.confianza * 100).toFixed(0)}% probable
+                </span>
               </div>
+            </div>
+
+            {/* Distribución: lo que un marcador único ocultaba */}
+            <div className="rounded-2xl border border-slate-700/50 bg-slate-900/40 p-4 space-y-3">
+              <h4 className="text-xs font-black uppercase text-slate-300 tracking-wider">
+                Marcadores más probables
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {consensus.top.map((c, i) => (
+                  <span
+                    key={c.marcador}
+                    className={
+                      "font-mono text-[11px] font-bold px-2.5 py-1 rounded-lg border " +
+                      (i === 0
+                        ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                        : "bg-slate-800/60 border-slate-700 text-slate-400")
+                    }
+                  >
+                    {c.marcador}{" "}
+                    <span className="opacity-60">{(c.p * 100).toFixed(1)}%</span>
+                  </span>
+                ))}
+              </div>
+
+              <div>
+                <div className="flex h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-emerald-500" style={{ width: `${consensus.p1x2.local * 100}%` }} />
+                  <div className="bg-slate-500" style={{ width: `${consensus.p1x2.empate * 100}%` }} />
+                  <div className="bg-amber-500" style={{ width: `${consensus.p1x2.visitante * 100}%` }} />
+                </div>
+                <div className="flex justify-between mt-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wide">
+                  <span>{teamA?.name} {(consensus.p1x2.local * 100).toFixed(0)}%</span>
+                  <span>Empate {(consensus.p1x2.empate * 100).toFixed(0)}%</span>
+                  <span>{teamB?.name} {(consensus.p1x2.visitante * 100).toFixed(0)}%</span>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                Goles esperados {consensus.lambda.A.toFixed(2)} &ndash; {consensus.lambda.B.toFixed(2)}.
+                Más de 2,5 goles: {(consensus.over25 * 100).toFixed(0)}%.
+              </p>
             </div>
 
             {/* AI Tactical Report Section */}

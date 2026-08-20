@@ -274,7 +274,7 @@ export default function PlayoffsView({ matches }: PlayoffsViewProps) {
       <div className="rounded-2xl border border-blue-500/10 bg-slate-900/50 p-4 flex gap-3.5 items-start">
         <ListChecks className="h-5 w-5 text-emerald-400 mt-1 flex-shrink-0" />
         <div>
-          <h3 className="text-sm font-bold text-slate-200">Fases Finales del Mundial 2026</h3>
+          <h3 className="text-sm font-bold text-slate-200">Fases Finales del Torneo</h3>
           <p className="text-xs text-blue-200/80 mt-1 leading-relaxed">
             Consulte en tiempo real la tabla de mejores terceros de grupo, los clasificados directos y el cuadro completo de los cruces de Dieciseisavos de Final.
           </p>

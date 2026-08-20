@@ -4,6 +4,7 @@
  */
 
 import { Sparkles, Calendar, Zap } from "lucide-react";
+import { BRAND } from "../brand";
 
 interface HeaderProps {
   lastSync: string;
@@ -23,7 +24,7 @@ export default function Header({ lastSync }: HeaderProps) {
         <div>
           <div className="flex items-center gap-2">
             <span className="inline-flex h-6 items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-500/30 animate-pulse">
-              <Zap className="h-3.5 w-3.5" /> EN VIVO • COPA MUNDIAL 2026
+              <Zap className="h-3.5 w-3.5" /> {BRAND.cinta}
             </span>
           </div>
           <div className="flex items-center gap-3 mt-2">
@@ -126,11 +127,11 @@ export default function Header({ lastSync }: HeaderProps) {
             </div>
             
             <h1 id="app-title" className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              2026 FIFA <span className="bg-gradient-to-r from-emerald-400 to-lime-400 bg-clip-text text-transparent">SCORE PREDICT</span>
+              {BRAND.nombre} <span className="bg-gradient-to-r from-emerald-400 to-lime-400 bg-clip-text text-transparent">{BRAND.acento}</span>
             </h1>
           </div>
           <p className="text-sm font-medium text-blue-200 mt-1">
-            Simulador y Predictor del Mundial 2026
+            {BRAND.descripcion}
           </p>
         </div>
 
@@ -140,7 +141,7 @@ export default function Header({ lastSync }: HeaderProps) {
             <span>Sincronizado: {lastSync}</span>
           </div>
           <div className="text-[10px] font-mono text-blue-400 tracking-wider">
-            APP ID: com.mundial.simulador
+            APP ID: {BRAND.appId}
           </div>
         </div>
       </div>
