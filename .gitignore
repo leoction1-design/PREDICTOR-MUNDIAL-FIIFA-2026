@@ -1,8 +1,15 @@
 node_modules/
-build/
-dist/
-coverage/
-.DS_Store
 *.log
-.env*
-!.env.example
+.DS_Store
+
+# Plataforma Android: se versiona lo que hace falta para compilar y se ignora lo que
+# genera `cap sync` en cada pasada — los assets copiados desde docs/ y la salida de
+# Gradle. Versionarlos duplicaria la web dentro del repositorio y ensuciaria cada commit.
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/local.properties
+android/.idea/

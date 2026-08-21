@@ -1,74 +1,59 @@
 # GolCast
 
-Pronósticos de marcador para partidos de fútbol de cualquier liga, acompañados de la
-probabilidad que los respalda.
+Marcadores probables de fútbol para cualquier liga, cada uno con la probabilidad que lo
+respalda y con el historial de aciertos a la vista.
 
-## Qué hace
+**Web:** https://leoction1-design.github.io/PREDICTOR-MUNDIAL-FIIFA-2026/
+(requiere activar GitHub Pages: Settings → Pages → rama `main`, carpeta `/docs`)
 
-El modelo es un **Dixon-Coles** ajustado liga por liga sobre resultados reales: estima el
-ataque y la defensa de cada equipo por máxima verosimilitud y produce una distribución de
-probabilidad sobre todos los marcadores posibles, no un resultado seco.
+## Qué hay aquí
 
-Cuando el partido tiene cuotas de mercado disponibles, la predicción se **calibra al mercado**:
-se conserva el total de goles del modelo y se ajusta el reparto local/visitante hasta
-reproducir el 1X2 que implican las cuotas. El mercado tiene las mejores probabilidades de
-resultado que existen pero no publica distribución de marcadores; Dixon-Coles aporta la forma.
+| | |
+|---|---|
+| `docs/` | El sitio publicado. `index.html` es autocontenido; `datos.json` son los mismos datos sueltos. |
+| `web/plantilla.html` | La plantilla de la que sale `docs/index.html`. **Aquí se edita el diseño**, no en docs/. |
+| `android/` | Envoltorio Capacitor. Empaqueta `docs/` tal cual. |
 
-Medido sobre 665 partidos fuera de muestra:
+El generador vive fuera del repositorio, en `futbol/construir_web.py`: ensambla la plantilla
+con los datos del día y escribe `docs/`.
 
-| | log-loss marcador | log-loss 1X2 | marcador exacto |
-|---|---|---|---|
-| Modelo solo | 3,1397 | 1,0643 | 11,73% |
-| **Calibrado al mercado** | **3,0647** | **1,0069** | **12,48%** |
-| Mercado (referencia) | — | 1,0017 | — |
-| Decir siempre «1-1» | — | — | 10,68% |
+## El modelo
 
-Prueba pareada del calibrado contra el modelo solo, en log-loss de marcador: t = −4,62,
-IC95 bootstrap [−0,108, −0,044], mejora en el 57,6% de los partidos individuales.
+**Dixon-Coles** ajustado liga por liga por máxima verosimilitud sobre resultados reales, con
+tres correcciones que se midieron una por una contra datos que el modelo no había visto:
 
-## Lo que conviene saber antes de usarlo
+- **Calibración de goles por liga.** El ajuste dejaba un sesgo bajista de 0,20 goles por
+  partido (t = −5,2 sobre 2247 partidos). Un factor global único empeoraba el marcador exacto;
+  por liga mejora las dos cosas.
+- **Calibración al mercado.** Cuando hay cuotas, se conserva el total de goles del modelo y se
+  ajusta el reparto local/visitante al que implican los precios. Es el ingrediente decisivo:
+  con cuotas el modelo bate el listón de «decir siempre 1-1»; sin ellas, no.
+- **Encogimiento hacia la distribución empírica** (15%). El Dixon-Coles deja seca la cola de
+  marcadores —3-2, 4-1 y compañía son más de un tercio de los partidos reales— y esto la
+  repone. Log-loss 3,0728 → 3,0577, t = 3,45.
 
-**El marcador más probable de un partido de fútbol ronda el 10-20% de probabilidad.** La app
-lo muestra siempre junto al marcador por esa razón. Un pronóstico al 13% falla 87 veces de
-cada 100, y eso no es un defecto del modelo: es cómo es el fútbol.
+El marcador que se muestra es la celda más probable **dentro del resultado más probable**, no
+la de toda la rejilla. La celda global suele ser un empate aunque el modelo crea que gana el
+local, y la página acababa contradiciéndose a sí misma.
 
-**El listón real es «decir siempre 1-1»**, que acierta un 10,2% sin modelo alguno. La ventaja
-del modelo sobre esa estrategia trivial es de menos de dos puntos. Cualquier sistema que
-prometa mucho más está midiendo mal o mirando solo sus aciertos.
+## Honestidad
 
-## Estructura
+La página enseña su propio expediente en la pestaña **Resultados**: cada predicción junto al
+resultado real, y al lado el listón de «decir siempre 1-1». Un predictor que solo muestra lo
+que va a pasar y esconde lo que pasó no es verificable.
 
-```
-src/
-  dixonColes.ts        distribución de marcadores y calibración al mercado
-  simulator.ts         motor de las vistas de torneo
-  realData.json        fixtures y lambdas, generadas por el pipeline
-  brand.ts             nombre e identidad, en un solo sitio
-  components/
-    RealMatchesView.tsx   partidos reales de cualquier liga
-    MatchDetailModal.tsx  detalle con distribución y reporte táctico
-server.js              endpoint /api/analyze, texto táctico con Gemini
-```
+El marcador más probable de un partido de fútbol sigue siendo improbable: ronda el 11%. Eso no
+es un fallo del modelo, es cómo es el fútbol.
 
-Los datos de partidos se generan fuera del repo con el pipeline de Forebet y se vuelcan en
-`src/realData.json`. Ese archivo es la única entrada de datos reales de la app.
-
-## Ejecutar
+## La APK
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
+npm run apk        # cap sync + gradlew assembleDebug
 ```
 
-Para el reporte táctico opcional hace falta una clave de Gemini en `.env.local`:
+O desde Actions → Build Android APK → Run workflow, que deja la APK como artefacto.
 
-```
-GEMINI_API_KEY="tu-clave"
-```
-
-Sin clave la app funciona igual; solo ese panel queda inactivo. **La clave no interviene en el
-pronóstico** — Gemini escribe el comentario táctico, el marcador sale del modelo.
-
-## Android
-
-Ver [ANDROID_BUILD.md](ANDROID_BUILD.md).
+**No hace falta recompilarla cuando cambian los datos.** La página empaquetada pide
+`docs/datos.json` al abrirse y se pone al día sola; si no hay red, se queda con lo último que
+vio. Recompilar solo hace falta si cambia el diseño o el motor.

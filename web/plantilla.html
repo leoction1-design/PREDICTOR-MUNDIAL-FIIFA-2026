@@ -348,27 +348,42 @@ function fechaLarga(md){const[m,d]=md.split("-").map(Number);
 const streak=s=>'<span class="streak" title="Últimos resultados, el más reciente primero">'+
   [...s].map(c=>`<i class="${c==="W"?"w":c==="D"?"d":"l"}"></i>`).join("")+'</span>';
 
-const ROWS=DATA.rows;
-$("v-n").textContent=ROWS.length;
-$("v-tr").textContent=DATA.entren.partidos.toLocaleString("es-ES");
-const dates=[...new Set(ROWS.map(r=>r[0]))].sort();
-const leagues=[...new Set(ROWS.map(r=>r[2]))].filter(Boolean).sort();
-$("v-lg").textContent=leagues.length+" ligas";
-$("f-date").innerHTML='<option value="">Todas las fechas</option>'+dates.map(d=>
-  `<option value="${d}">${fechaLarga(d)} · ${ROWS.filter(r=>r[0]===d).length}</option>`).join("");
-$("f-league").innerHTML='<option value="">Todas las ligas</option>'+
-  leagues.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join("");
+/* Mutables a proposito: refresca() los sustituye cuando llegan datos frescos por red.
+   HISTORIAL se inyecta como `const`, que no crea propiedad en window, asi que se copia aqui
+   a una variable propia en vez de leerlo global cada vez. */
+let ROWS=DATA.rows;
+let HISTORIAL=(typeof HIST!=="undefined"&&HIST)?HIST:[];
+/* Cabecera y desplegables salen de ROWS, que refresca() puede sustituir. Va en una
+   funcion para poder rehacerlos entonces: si no, los filtros seguirian ofreciendo las
+   fechas de ayer sobre datos de hoy. */
+function rellenaFiltros(){
+  $("v-n").textContent=ROWS.length;
+  $("v-tr").textContent=DATA.entren.partidos.toLocaleString("es-ES");
+  const dates=[...new Set(ROWS.map(r=>r[0]))].sort();
+  const leagues=[...new Set(ROWS.map(r=>r[2]))].filter(Boolean).sort();
+  $("v-lg").textContent=leagues.length+" ligas";
+  const fd=$("f-date").value, fl=$("f-league").value;
+  $("f-date").innerHTML='<option value="">Todas las fechas</option>'+dates.map(d=>
+    `<option value="${d}">${fechaLarga(d)} · ${ROWS.filter(r=>r[0]===d).length}</option>`).join("");
+  $("f-league").innerHTML='<option value="">Todas las ligas</option>'+
+    leagues.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join("");
+  /* conservar la eleccion del usuario si sigue existiendo tras el refresco */
+  if(dates.includes(fd))$("f-date").value=fd;
+  if(leagues.includes(fl))$("f-league").value=fl;
+}
+rellenaFiltros();
 
 /* Ordenar por probabilidad obliga a predecir los 949, y volver a hacerlo en
    cada render sería absurdo. Se calcula una vez al arrancar y se reutiliza:
    el coste está en el arranque, no en cada tecla del buscador. */
-const PRED=(()=>{
+let PRED=[];
+function calculaPred(){
   const t0=performance.now();
-  const out=ROWS.map(r=>predict(r[5],r[6],r[7]||null));
-  console.info(`GolCast · ${out.length} predicciones en ${Math.round(performance.now()-t0)} ms`);
-  return out;
-})();
-ROWS.forEach((r,i)=>{r.i=i;});
+  PRED=ROWS.map(r=>predict(r[5],r[6],r[7]||null));
+  ROWS.forEach((r,i)=>{r.i=i;});
+  console.info(`GolCast · ${PRED.length} predicciones en ${Math.round(performance.now()-t0)} ms`);
+}
+calculaPred();
 
 let shown=35;
 function filtered(){
@@ -433,17 +448,15 @@ function render(){
 /* ── Historial ── */
 function pintaHist(){
   const box=$("hist");
-  /* HIST se declara con const, que NO crea propiedad en window: comprobarlo
-     con window.HIST daba siempre falso y la pestana salia vacia. */
-  if(typeof HIST==="undefined"||!HIST.length){
+  if(!HISTORIAL.length){
     box.innerHTML='<p class="empty">Todavía no hay partidos resueltos. Aparecerán aquí en cuanto se jueguen.</p>';
     return;
   }
-  const n=HIST.length;
-  const ex=HIST.filter(h=>h[4]===h[5]).length;
-  const d11=HIST.filter(h=>h[5]==="1-1").length;
+  const n=HISTORIAL.length;
+  const ex=HISTORIAL.filter(h=>h[4]===h[5]).length;
+  const d11=HISTORIAL.filter(h=>h[5]==="1-1").length;
   const sg=t=>{const v=t.split("-").map(Number);return v[0]>v[1]?0:(v[0]===v[1]?1:2);};
-  const res=HIST.filter(h=>sg(h[4])===sg(h[5])).length;
+  const res=HISTORIAL.filter(h=>sg(h[4])===sg(h[5])).length;
   const pc=k=>(100*k/n).toFixed(1).replace(".",",")+"%";
   box.innerHTML=
     `<div class="board" style="margin-bottom:10px">
@@ -455,7 +468,7 @@ function pintaHist(){
          <span class="val">${pc(res)}</span><span class="sub">${res} de ${n}</span></div>
      </div>
      <div class="h-head"><span>Fecha</span><span>Partido</span><span>Pred.</span><span>Real</span><span></span></div>`
-   + HIST.map(h=>{
+   + HISTORIAL.map(h=>{
       const ok=h[4]===h[5], casi=!ok&&sg(h[4])===sg(h[5]);
       return `<div class="h-row${ok?" ok":""}">
         <div class="h-d">${h[0].slice(3)}/${h[0].slice(0,2)}<span class="h-lg">${esc(h[1])}</span></div>
@@ -479,4 +492,40 @@ $("tab-h").addEventListener("click",()=>verPestana("h"));
   $(id).addEventListener("input",()=>{shown=35;render();}));
 $("more").addEventListener("click",()=>{shown+=70;render();});
 render();
+
+/* ── Datos frescos por red ──────────────────────────────────────────────────
+   La pagina se entrega con los datos del dia en que se genero. Servida desde
+   GitHub Pages eso basta, pero dentro de la APK el paquete se queda congelado en
+   la fecha de compilacion, y una app de pronosticos que muestra la jornada de
+   hace una semana no sirve para nada.
+
+   Por eso, al abrir, pide datos.json al repositorio. Se usa raw.githubusercontent
+   (no la URL de Pages) porque responde con Access-Control-Allow-Origin: * y
+   funciona aunque Pages no este activado. Si falla — sin cobertura, avion, repo
+   caido — no pasa nada: se queda lo empaquetado, que ya esta pintado. Por eso el
+   render() de arriba va ANTES y este bloque nunca bloquea el arranque. */
+const ORIGEN="https://raw.githubusercontent.com/leoction1-design/"
+            +"PREDICTOR-MUNDIAL-FIIFA-2026/main/docs/datos.json";
+function refresca(){
+  if(!("fetch" in window))return;
+  fetch(ORIGEN,{cache:"no-store"})
+    .then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(d=>{
+      if(!d||!Array.isArray(d.rows)||!d.rows.length)return;
+      if(d.gen===DATA.gen)return;                 // ya estamos al dia
+      ROWS=d.rows; HISTORIAL=Array.isArray(d.hist)?d.hist:HISTORIAL;
+      if(d.base){DATA.base=d.base;DATA.base_w=d.base_w||0;}
+      DATA.gen=d.gen; if(d.entren)DATA.entren=d.entren;
+      /* los desplegables se llenaron con las fechas y ligas viejas */
+      calculaPred(); rellenaFiltros(); shown=35; render();
+      if(!$("hist").hidden)pintaHist();
+      /* el sello lo inserta construir_web.py junto al contador; si la pagina llego
+         empaquetada en la APK diria la fecha de compilacion, que ya no es la de los
+         datos que se acaban de pintar */
+      const sello=$("sello");
+      if(sello&&d.sello)sello.textContent="· act. "+d.sello;
+    })
+    .catch(()=>{});                               // silencioso: lo empaquetado sigue valiendo
+}
+refresca();
 </script>

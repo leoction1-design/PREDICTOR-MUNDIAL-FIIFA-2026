@@ -1,0 +1,15 @@
+# El repositorio se edita en Windows pero se compila en Linux (GitHub Actions). Sin esto
+# git guarda gradlew con CRLF y en el runner falla con "bad interpreter: no such file or
+# directory": el \r queda pegado al nombre del interprete. Los scripts y los ficheros de
+# Gradle van siempre con LF.
+* text=auto eol=lf
+*.sh          text eol=lf
+gradlew       text eol=lf
+*.gradle      text eol=lf
+*.properties  text eol=lf
+
+# Binarios: que git no los toque
+*.png binary
+*.jpg binary
+*.svg text eol=lf
+*.jar binary

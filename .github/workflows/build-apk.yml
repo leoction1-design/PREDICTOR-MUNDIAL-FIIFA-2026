@@ -1,17 +1,11 @@
 name: Build Android APK
 
-# SOLO MANUAL, a proposito.
+# Solo manual, y por una razon de fondo: la APK ya no necesita recompilarse cuando
+# cambian los datos. Envuelve la web de docs/, y esa pagina pide datos frescos a
+# docs/datos.json al abrirse, asi que una APK compilada una vez sigue mostrando los
+# pronosticos de hoy. Recompilar solo hace falta si cambia el diseno o el motor.
 #
-# Este flujo no ha terminado bien ni una sola vez en 10 ejecuciones: siempre muere en
-# `npx cap sync android`. Mientras tanto el ciclo diario empuja datos a docs/ cada
-# manana, asi que cada dia disparaba una compilacion condenada a fallar y un correo
-# de aviso. La APK ademas no es el producto: lo que se usa es la web de docs/.
-#
-# Se ejecuta desde la pestana Actions -> Build Android APK -> Run workflow.
-# Para volver a compilar en cada push, devolver aqui:
-#     push:
-#       branches: [ main, master ]
-#       paths-ignore: [ 'docs/**', 'web/**', '*.md' ]
+# Actions -> Build Android APK -> Run workflow.
 on:
   workflow_dispatch:
 
@@ -35,32 +29,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
 
-      - name: Instalar dependencias
-        run: npm install
+      # Sin lockfile compartido con la web: aqui solo viven las tres piezas de
+      # Capacitor. No hay paso de compilacion porque docs/ ya es el sitio terminado.
+      - name: Instalar Capacitor
+        run: npm install --no-audit --no-fund
 
-      - name: Compilar la app web (Vite)
-        run: npm run build
-
-      # `cap doctor` imprime versiones y estado de la plataforma. Va antes del sync y
-      # con `|| true` para que su salida quede en el registro aunque el sync reviente:
-      # el fallo actual solo reporta "exit code 1" y asi no se puede diagnosticar.
-      - name: Diagnostico de Capacitor
+      - name: Diagnostico
         run: npx cap doctor || true
 
-      - name: Sincronizar Capacitor con Android
+      - name: Copiar la web a la plataforma Android
         run: npx cap sync android --verbose
 
-      - name: Dar permisos de ejecución a gradlew
+      - name: Permisos de gradlew
         run: chmod +x android/gradlew
 
       - name: Compilar APK debug
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Subir APK como artefacto descargable
+      - name: Subir la APK
         uses: actions/upload-artifact@v4
         with:
-          name: predictor-mundial-fifa-2026-debug-apk
+          name: golcast-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
