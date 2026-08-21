@@ -1,4 +1,4 @@
-package com.leonardo.fifapredictor2026;
+package com.leonardo.golcast;
 
 import com.getcapacitor.BridgeActivity;
 

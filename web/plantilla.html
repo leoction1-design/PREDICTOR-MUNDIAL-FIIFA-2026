@@ -289,6 +289,24 @@ function grid(a,b){
     const v=pois(a,x)*pois(b,y)*tau(x,y,a,b,RHO);g[x][y]=v;t+=v;}}
   for(let x=0;x<=MAXG;x++)for(let y=0;y<=MAXG;y++)g[x][y]/=t;return g;
 }
+/* Encoge la rejilla hacia la distribucion empirica de marcadores del entrenamiento.
+   El Dixon-Coles deja seca la cola (3-2, 4-1 y companyia suman mas de un tercio de los
+   partidos reales) y esto la repone. Peso elegido con los cortes de julio y comprobado
+   en agosto, datos nunca vistos: log-loss 3,0728 -> 3,0577, t = 3,45.
+
+   IMPORTANTE: se aplica DESPUES de calibrar al mercado, nunca dentro de la biseccion.
+   El modelo en Python hace exactamente eso; meterlo dentro de grid() haria que la
+   biseccion trabajase sobre otra rejilla y la pagina mostraria un marcador distinto
+   del que quedo registrado antes del partido. */
+function encoge(g){
+  const B=(typeof DATA!=="undefined")?DATA.base:null;
+  const W=(typeof DATA!=="undefined")?(DATA.base_w||0):0;
+  if(!B||W<=0)return g;
+  const o=[];
+  for(let x=0;x<=MAXG;x++){o[x]=[];for(let y=0;y<=MAXG;y++)
+    o[x][y]=(1-W)*g[x][y]+W*((B[x]&&B[x][y])||0);}
+  return o;
+}
 function outcomes(g){let h=0,d=0,a=0;
   for(let x=0;x<=MAXG;x++)for(let y=0;y<=MAXG;y++){
     if(x>y)h+=g[x][y];else if(x===y)d+=g[x][y];else a+=g[x][y];}
@@ -304,7 +322,7 @@ function predict(la,lb,odds){
       const r=(o2[0]+o2[2])>0?o2[0]/(o2[0]+o2[2]):.5;
       if(r<tgt)lo=D;else hi=D;}
     a=Math.max(.05,(T+D)/2);b=Math.max(.05,(T-D)/2);}
-  const g=grid(a,b),cells=[];
+  const g=encoge(grid(a,b)),cells=[];
   for(let x=0;x<=MAXG;x++)for(let y=0;y<=MAXG;y++)cells.push([x+"-"+y,g[x][y]]);
   cells.sort((p,q)=>q[1]-p[1]);
   /* La celda mas probable de la rejilla suele ser un empate: con dos lambdas

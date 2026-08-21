@@ -1,10 +1,18 @@
 name: Build Android APK
 
-# Se ejecuta automáticamente al hacer push a main/master,
-# o manualmente desde la pestaña "Actions" de GitHub (workflow_dispatch).
+# SOLO MANUAL, a proposito.
+#
+# Este flujo no ha terminado bien ni una sola vez en 10 ejecuciones: siempre muere en
+# `npx cap sync android`. Mientras tanto el ciclo diario empuja datos a docs/ cada
+# manana, asi que cada dia disparaba una compilacion condenada a fallar y un correo
+# de aviso. La APK ademas no es el producto: lo que se usa es la web de docs/.
+#
+# Se ejecuta desde la pestana Actions -> Build Android APK -> Run workflow.
+# Para volver a compilar en cada push, devolver aqui:
+#     push:
+#       branches: [ main, master ]
+#       paths-ignore: [ 'docs/**', 'web/**', '*.md' ]
 on:
-  push:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -15,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -26,7 +34,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Instalar dependencias
@@ -35,8 +43,14 @@ jobs:
       - name: Compilar la app web (Vite)
         run: npm run build
 
+      # `cap doctor` imprime versiones y estado de la plataforma. Va antes del sync y
+      # con `|| true` para que su salida quede en el registro aunque el sync reviente:
+      # el fallo actual solo reporta "exit code 1" y asi no se puede diagnosticar.
+      - name: Diagnostico de Capacitor
+        run: npx cap doctor || true
+
       - name: Sincronizar Capacitor con Android
-        run: npx cap sync android
+        run: npx cap sync android --verbose
 
       - name: Dar permisos de ejecución a gradlew
         run: chmod +x android/gradlew
