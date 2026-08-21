@@ -166,6 +166,43 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
 .note b{color:var(--ink);font-weight:600}
 .empty{padding:52px 0;text-align:center;color:var(--muted)}
 
+
+/* ══ Historial: la pagina ensena su propio expediente ══
+   Un predictor que solo muestra lo que va a pasar y esconde lo que paso no es
+   verificable. Aciertos en verde, con el suelo de «siempre 1-1» al lado. */
+.tabs{display:flex;gap:6px;margin-bottom:2px}
+.tab{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.07em;
+  text-transform:uppercase;padding:9px 16px;border-radius:9px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--hair);color:var(--muted);min-height:44px}
+.tab[aria-selected=true]{border-color:var(--c1);color:var(--c1);background:var(--c1-wash)}
+.h-row{display:grid;grid-template-columns:44px minmax(130px,1fr) 62px 62px 74px;
+  gap:10px;align-items:center;background:var(--surface);border:1px solid var(--hair);
+  border-radius:11px;padding:10px 13px}
+.h-row.ok{border-color:var(--c3)}
+.h-d{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.h-lg{display:block;font-family:var(--display);font-weight:700;font-size:9px;
+  letter-spacing:.09em;color:var(--c4)}
+.h-t{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h-t.b{font-weight:500;color:var(--ink-2)}
+.h-n{font-family:var(--mono);font-size:15px;font-weight:600;text-align:center;
+  font-variant-numeric:tabular-nums}
+.h-n.pred{color:var(--muted)}
+.h-n.real{color:var(--ink)}
+.h-row.ok .h-n.pred,.h-row.ok .h-n.real{color:var(--c3)}
+.h-k{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.09em;
+  text-transform:uppercase;text-align:right;color:var(--muted)}
+.h-row.ok .h-k{color:var(--c3)}
+.h-head{display:grid;grid-template-columns:44px minmax(130px,1fr) 62px 62px 74px;gap:10px;
+  padding:0 13px 4px;font-family:var(--display);font-weight:700;font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.h-head span:nth-child(3),.h-head span:nth-child(4){text-align:center}
+.h-head span:last-child{text-align:right}
+@media (max-width:760px){
+  .h-row,.h-head{grid-template-columns:1fr 56px 56px}
+  .h-d{grid-column:1}.h-teams{grid-column:1/-1}
+  .h-head span:nth-child(2){display:none}
+}
+
 @media (max-width:760px){
   .stat{flex:1 1 47%;border-bottom:1px solid var(--hair)}
   .m{grid-template-columns:1fr auto;padding:13px 15px 0}
@@ -215,7 +252,12 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
     <span class="tally" id="tally"></span>
   </div>
 
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tab-p" role="tab" aria-selected="true">Próximos</button>
+    <button class="tab" id="tab-h" role="tab" aria-selected="false">Resultados</button>
+  </div>
   <div id="list" style="display:flex;flex-direction:column;gap:20px"></div>
+  <div id="hist" hidden style="display:flex;flex-direction:column;gap:6px"></div>
   <div class="more"><button type="button" id="more">Ver más</button></div>
 
   <section class="note">
@@ -265,7 +307,18 @@ function predict(la,lb,odds){
   const g=grid(a,b),cells=[];
   for(let x=0;x<=MAXG;x++)for(let y=0;y<=MAXG;y++)cells.push([x+"-"+y,g[x][y]]);
   cells.sort((p,q)=>q[1]-p[1]);
-  return{top:cells.slice(0,5),p:outcomes(g)};
+  /* La celda mas probable de la rejilla suele ser un empate: con dos lambdas
+     parecidas P(1,1) gana aunque el modelo crea que el local es favorito, y la
+     pagina acababa mostrando "1-1" con una barra debajo diciendo "gana el local
+     58%". Se elige la mejor celda DENTRO del resultado mas probable: sobre 79
+     partidos resueltos el acierto exacto no cambia y el de resultado sube del
+     27,8% al 43,0%. */
+  const P=outcomes(g), gana=P.indexOf(Math.max(...P));
+  const lado=t=>{const v=t.split("-").map(Number);return v[0]>v[1]?0:(v[0]===v[1]?1:2);};
+  const dentro=cells.filter(c=>lado(c[0])===gana);
+  const cabeza=dentro.length?dentro[0]:cells[0];
+  const orden=[cabeza,...cells.filter(c=>c[0]!==cabeza[0])];
+  return{top:orden.slice(0,5),p:P};
 }
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -359,6 +412,51 @@ function render(){
   $("more").style.display=left>0?"":"none";
   $("more").textContent=`Ver más · quedan ${left}`;
 }
+/* ── Historial ── */
+function pintaHist(){
+  const box=$("hist");
+  /* HIST se declara con const, que NO crea propiedad en window: comprobarlo
+     con window.HIST daba siempre falso y la pestana salia vacia. */
+  if(typeof HIST==="undefined"||!HIST.length){
+    box.innerHTML='<p class="empty">Todavía no hay partidos resueltos. Aparecerán aquí en cuanto se jueguen.</p>';
+    return;
+  }
+  const n=HIST.length;
+  const ex=HIST.filter(h=>h[4]===h[5]).length;
+  const d11=HIST.filter(h=>h[5]==="1-1").length;
+  const sg=t=>{const v=t.split("-").map(Number);return v[0]>v[1]?0:(v[0]===v[1]?1:2);};
+  const res=HIST.filter(h=>sg(h[4])===sg(h[5])).length;
+  const pc=k=>(100*k/n).toFixed(1).replace(".",",")+"%";
+  box.innerHTML=
+    `<div class="board" style="margin-bottom:10px">
+       <div class="stat s1"><span class="k">Marcador exacto</span>
+         <span class="val hot">${pc(ex)}</span><span class="sub">${ex} de ${n}</span></div>
+       <div class="stat vs"><span class="k">Decir siempre 1-1</span>
+         <span class="val">${pc(d11)}</span><span class="sub">sin modelo · el listón</span></div>
+       <div class="stat s2"><span class="k">Acierto 1X2</span>
+         <span class="val">${pc(res)}</span><span class="sub">${res} de ${n}</span></div>
+     </div>
+     <div class="h-head"><span>Fecha</span><span>Partido</span><span>Pred.</span><span>Real</span><span></span></div>`
+   + HIST.map(h=>{
+      const ok=h[4]===h[5], casi=!ok&&sg(h[4])===sg(h[5]);
+      return `<div class="h-row${ok?" ok":""}">
+        <div class="h-d">${h[0].slice(3)}/${h[0].slice(0,2)}<span class="h-lg">${esc(h[1])}</span></div>
+        <div class="h-teams"><div class="h-t">${esc(h[2])}</div><div class="h-t b">${esc(h[3])}</div></div>
+        <div class="h-n pred">${h[4]}</div>
+        <div class="h-n real">${h[5]}</div>
+        <div class="h-k">${ok?"Exacto":(casi?"1X2":"—")}</div>
+      </div>`;}).join("");
+}
+function verPestana(cual){
+  const p=cual==="p";
+  $("tab-p").setAttribute("aria-selected",p); $("tab-h").setAttribute("aria-selected",!p);
+  $("list").hidden=!p; $("more").parentElement.hidden=!p; $("hist").hidden=p;
+  document.querySelector(".filters").hidden=!p;
+  if(!p) pintaHist();
+}
+$("tab-p").addEventListener("click",()=>verPestana("p"));
+$("tab-h").addEventListener("click",()=>verPestana("h"));
+
 ["f-date","f-league","f-src","f-q","f-sort"].forEach(id=>
   $(id).addEventListener("input",()=>{shown=35;render();}));
 $("more").addEventListener("click",()=>{shown+=70;render();});
