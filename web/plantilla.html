@@ -317,7 +317,10 @@ function predict(la,lb,odds){
   if(odds&&odds.length===3&&odds.every(o=>o>1)){
     const m=devig(odds),tgt=(m[0]+m[2])>0?m[0]/(m[0]+m[2]):.5,T=Math.max(.4,a+b);
     let lo=-T+.2,hi=T-.2,D=a-b;
-    for(let i=0;i<32;i++){D=(lo+hi)/2;
+    /* 40 iteraciones, las mismas que calibrate_to_market() en model.py. Con 32 la
+       biseccion paraba en un punto ligeramente distinto y en partidos muy igualados
+       eso cambiaba el marcador mostrado respecto al registrado. */
+    for(let i=0;i<40;i++){D=(lo+hi)/2;
       const o2=outcomes(grid(Math.max(.05,(T+D)/2),Math.max(.05,(T-D)/2)));
       const r=(o2[0]+o2[2])>0?o2[0]/(o2[0]+o2[2]):.5;
       if(r<tgt)lo=D;else hi=D;}
@@ -325,15 +328,19 @@ function predict(la,lb,odds){
   const g=encoge(grid(a,b)),cells=[];
   for(let x=0;x<=MAXG;x++)for(let y=0;y<=MAXG;y++)cells.push([x+"-"+y,g[x][y]]);
   cells.sort((p,q)=>q[1]-p[1]);
-  /* La celda mas probable de la rejilla suele ser un empate: con dos lambdas
-     parecidas P(1,1) gana aunque el modelo crea que el local es favorito, y la
-     pagina acababa mostrando "1-1" con una barra debajo diciendo "gana el local
-     58%". Se elige la mejor celda DENTRO del resultado mas probable: sobre 79
-     partidos resueltos el acierto exacto no cambia y el de resultado sube del
-     27,8% al 43,0%. */
+  /* Que marcador se ensena. Las dos reglas obvias fallan por lados opuestos: la celda
+     mas probable de la rejilla anuncia empate en el 61,5% de los partidos (y dice "1-1"
+     en el 53,8%) cuando los empates son el 23,4%; atarla siempre al resultado favorito
+     no predice empate jamas, porque el empate casi nunca gana el 1X2. Se condiciona solo
+     cuando el favorito lo es con claridad (>= U); si el partido esta abierto manda la
+     rejilla. Sobre 3690 partidos, umbral fijado en julio y comprobado en agosto: predice
+     empate el 22,0% frente al 22,7% real, con el acierto exacto empatado.
+     DEBE COINCIDIR con PICK_U y coherent_top() en model.py: si no, la pagina ensenaria
+     un marcador distinto del que quedo registrado antes del partido. */
+  const U=0.41;
   const P=outcomes(g), gana=P.indexOf(Math.max(...P));
   const lado=t=>{const v=t.split("-").map(Number);return v[0]>v[1]?0:(v[0]===v[1]?1:2);};
-  const dentro=cells.filter(c=>lado(c[0])===gana);
+  const dentro=P[gana]>=U?cells.filter(c=>lado(c[0])===gana):[];
   const cabeza=dentro.length?dentro[0]:cells[0];
   const orden=[cabeza,...cells.filter(c=>c[0]!==cabeza[0])];
   return{top:orden.slice(0,5),p:P};
