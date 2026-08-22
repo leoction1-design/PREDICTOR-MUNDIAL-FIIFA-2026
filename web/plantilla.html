@@ -233,9 +233,9 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
       <span class="sub" id="v-lg">—</span></div>
     <div class="stat s2"><span class="k">Entrenado con</span><span class="val" id="v-tr">—</span>
       <span class="sub">resultados reales</span></div>
-    <div class="stat s3"><span class="k">Acierto del modelo</span><span class="val hot">12,5%</span>
-      <span class="sub">marcador exacto</span></div>
-    <div class="stat s4 vs"><span class="k">Decir siempre 1-1</span><span class="val">10,7%</span>
+    <div class="stat s3"><span class="k">Acierto del modelo</span><span class="val hot" id="v-ex">—</span>
+      <span class="sub" id="v-ex-n">marcador exacto</span></div>
+    <div class="stat s4 vs"><span class="k">Decir siempre 1-1</span><span class="val" id="v-11">—</span>
       <span class="sub">sin modelo alguno</span></div>
   </section>
 
@@ -272,9 +272,11 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
       un coral ancho es un partido definido y cinco tramos parejos son una moneda al aire.</p>
     <p>Por eso el marcador de la derecha, aunque sea el más probable, ronda el <b>10-20%</b>:
       falla la mayoría de las veces. El listón honesto no es acertar mucho, es <b>batir a «decir
-      siempre 1-1»</b>, que acierta un 10,7% sin modelo. La ventaja medida sobre 665 partidos
-      fuera de muestra es 12,5% contra 10,7% — real y de menos de dos puntos, por eso está arriba
-      al mismo tamaño.</p>
+      siempre 1-1»</b>, que acierta cerca del 10% sin modelo alguno. Por eso los dos números
+      están arriba al mismo tamaño: <b>son las cifras del expediente real</b>, no de una prueba
+      de laboratorio, y ahora mismo la ventaja no está demostrada. En pruebas sobre partidos
+      que el modelo no había visto sale por delante (12,5% contra 10,7% en 665 partidos), pero
+      hasta que el historial de arriba lo confirme, eso es una promesa, no un resultado.</p>
     <p><b>Mercado</b> son partidos donde el reparto 1X2 sale de las cuotas y la forma del marcador
       del modelo. <b>Modelo</b> son los que no tenían cuotas. Los puntos junto a cada equipo son
       sus últimos cinco resultados, el más reciente primero.</p>
@@ -368,6 +370,23 @@ let HISTORIAL=(typeof HIST!=="undefined"&&HIST)?HIST:[];
 /* Cabecera y desplegables salen de ROWS, que refresca() puede sustituir. Va en una
    funcion para poder rehacerlos entonces: si no, los filtros seguirian ofreciendo las
    fechas de ayer sobre datos de hoy. */
+/* Estas dos cifras estaban clavadas a mano con el resultado de un backtest de 665
+   partidos (12,5% contra 10,7%), que dejaba al modelo por delante del liston. El
+   expediente real iba por detras — 7,8% contra 8,0% — asi que la cabecera presumia
+   de algo que la pestana Resultados desmentia dos clics mas abajo. Ahora salen de las
+   mismas predicciones resueltas que se enseñan ahi, y suben o bajan con ellas. */
+function pintaMarcador(){
+  const ex=$("v-ex"), su=$("v-11"), sub=$("v-ex-n");
+  if(!ex||!su)return;
+  if(!HISTORIAL.length){ ex.textContent="—"; su.textContent="—";
+    if(sub)sub.textContent="aún sin partidos resueltos"; return; }
+  const n=HISTORIAL.length;
+  const pc=k=>(100*k/n).toFixed(1).replace(".",",")+"%";
+  ex.textContent=pc(HISTORIAL.filter(h=>h[4]===h[5]).length);
+  su.textContent=pc(HISTORIAL.filter(h=>h[5]==="1-1").length);
+  if(sub)sub.textContent="marcador exacto · "+n+" resueltos";
+}
+
 function rellenaFiltros(){
   $("v-n").textContent=ROWS.length;
   $("v-tr").textContent=DATA.entren.partidos.toLocaleString("es-ES");
@@ -384,6 +403,7 @@ function rellenaFiltros(){
   if(leagues.includes(fl))$("f-league").value=fl;
 }
 rellenaFiltros();
+pintaMarcador();
 
 /* Ordenar por probabilidad obliga a predecir los 949, y volver a hacerlo en
    cada render sería absurdo. Se calcula una vez al arrancar y se reutiliza:
@@ -544,7 +564,7 @@ function refresca(){
       if(d.base){DATA.base=d.base;DATA.base_w=d.base_w||0;}
       DATA.gen=d.gen; if(d.entren)DATA.entren=d.entren;
       /* los desplegables se llenaron con las fechas y ligas viejas */
-      calculaPred(); rellenaFiltros(); shown=35; render();
+      calculaPred(); rellenaFiltros(); pintaMarcador(); shown=35; render();
       if(!$("hist").hidden)pintaHist();
       /* el sello lo inserta construir_web.py junto al contador; si la pagina llego
          empaquetada en la APK diria la fecha de compilacion, que ya no es la de los
