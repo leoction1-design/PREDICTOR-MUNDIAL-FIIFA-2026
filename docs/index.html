@@ -269,8 +269,8 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
     <select id="f-league" aria-label="Filtrar por liga"></select>
     <select id="f-sort" aria-label="Ordenar"
             title="Los partidos de pocos goles concentran más probabilidad en una casilla, así que este orden saca sobre todo marcadores cerrados. No es casualidad: también son los que más se aciertan.">
-      <option value="p">Más fiables primero</option>
       <option value="d">Por jornada</option>
+      <option value="p">Más fiables primero</option>
     </select>
     <select id="f-src" aria-label="Filtrar por fuente">
       <option value="">Todas las fuentes</option>
@@ -278,7 +278,7 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
       <option value="mod">Sin cuotas</option>
     </select>
     <input type="search" id="f-q" placeholder="Buscar equipo…" aria-label="Buscar equipo">
-    <span class="tally" id="tally"></span><span class="tally" id="sello" style="margin-left:0" title="Se actualiza cada mañana">· act. 22/08/2026 11:17</span>
+    <span class="tally" id="tally"></span><span class="tally" id="sello" style="margin-left:0" title="Se actualiza cada mañana">· act. 22/08/2026 12:13</span>
   </div>
 
   <div class="tabs" role="tablist">
@@ -494,10 +494,12 @@ function render(){
   if(nota){
     const porProb=$("f-sort").value==="p";
     nota.hidden=!porProb;
-    if(porProb)nota.innerHTML="Arriba dominan los marcadores cerrados porque un partido "
-      +"de pocos goles concentra más probabilidad en una casilla. <b>No es un sesgo: "
-      +"también son los que más se aciertan</b> — en este quinto superior se acierta el "
-      +"15% y en el inferior el 10%. Para ver la variedad real, cambia a «Por jornada».";
+    if(porProb)nota.innerHTML="Este orden saca casi solo <b>0-0 y 1-0</b>: un partido de "
+      +"pocos goles concentra la probabilidad en una casilla y uno abierto la reparte, así "
+      +"que ordenar por confianza es casi lo mismo que ordenar por goles. Los <b>2-1</b> "
+      +"existen — son el 21% de las predicciones — pero caen al final de la lista. "
+      +"A cambio, aquí arriba se acierta de verdad más: 15% en el quinto superior contra "
+      +"10% en el inferior. Vuelve a «Por jornada» para ver todos los partidos del día.";
   }
   $("tally").textContent=`${f.length} de ${ROWS.length}`;
   if(!f.length){$("list").innerHTML='<p class="empty">Ningún partido coincide con ese filtro.</p>';
