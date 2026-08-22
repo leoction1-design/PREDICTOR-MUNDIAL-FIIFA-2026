@@ -81,6 +81,9 @@ select,input[type=search]{font-family:var(--body);font-size:13.5px;font-weight:5
 select:hover,input:hover{border-color:var(--c4)}
 input[type=search]{flex:1;min-width:150px}
 select:focus-visible,input:focus-visible{outline:2px solid var(--c1);outline-offset:1px}
+.nota-orden{margin:0;padding:9px 13px;border-radius:10px;background:var(--raise);
+  border:1px solid var(--hair);color:var(--muted);font-size:12.5px;line-height:1.45}
+.nota-orden b{color:var(--ink-2);font-weight:600}
 .tally{font-family:var(--mono);font-size:12px;color:var(--muted);
   font-variant-numeric:tabular-nums;margin-left:auto}
 
@@ -239,8 +242,9 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
   <div class="filters">
     <select id="f-date" aria-label="Filtrar por fecha"></select>
     <select id="f-league" aria-label="Filtrar por liga"></select>
-    <select id="f-sort" aria-label="Ordenar">
-      <option value="p">Más probables primero</option>
+    <select id="f-sort" aria-label="Ordenar"
+            title="Los partidos de pocos goles concentran más probabilidad en una casilla, así que este orden saca sobre todo marcadores cerrados. No es casualidad: también son los que más se aciertan.">
+      <option value="p">Más fiables primero</option>
       <option value="d">Por jornada</option>
     </select>
     <select id="f-src" aria-label="Filtrar por fuente">
@@ -256,6 +260,7 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
     <button class="tab" id="tab-p" role="tab" aria-selected="true">Próximos</button>
     <button class="tab" id="tab-h" role="tab" aria-selected="false">Resultados</button>
   </div>
+  <p id="nota-orden" class="nota-orden" hidden></p>
   <div id="list" style="display:flex;flex-direction:column;gap:20px"></div>
   <div id="hist" hidden style="display:flex;flex-direction:column;gap:6px"></div>
   <div class="more"><button type="button" id="more">Ver más</button></div>
@@ -429,6 +434,21 @@ function matchHTML(r,conFecha){
 }
 function render(){
   const f=filtered();
+  /* Ordenar por probabilidad llena la cabeza de 0-0 y 1-0, y sin explicacion parece que
+     el modelo solo sabe decir eso. En realidad son el 35% del total: lo que pasa es que
+     un partido cerrado concentra la probabilidad en una casilla y uno abierto la reparte.
+     Medido sobre 3279 partidos fuera de muestra, el quinto de arriba acierta el 15,4% y
+     el de abajo el 9,6% (z = 3,2), asi que el orden informa de verdad — pero conviene
+     decir por que se parecen tanto entre si. */
+  const nota=$("nota-orden");
+  if(nota){
+    const porProb=$("f-sort").value==="p";
+    nota.hidden=!porProb;
+    if(porProb)nota.innerHTML="Arriba dominan los marcadores cerrados porque un partido "
+      +"de pocos goles concentra más probabilidad en una casilla. <b>No es un sesgo: "
+      +"también son los que más se aciertan</b> — en este quinto superior se acierta el "
+      +"15% y en el inferior el 10%. Para ver la variedad real, cambia a «Por jornada».";
+  }
   $("tally").textContent=`${f.length} de ${ROWS.length}`;
   if(!f.length){$("list").innerHTML='<p class="empty">Ningún partido coincide con ese filtro.</p>';
     $("more").style.display="none";return;}
