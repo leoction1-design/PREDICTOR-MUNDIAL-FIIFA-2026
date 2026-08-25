@@ -195,6 +195,24 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
 .h-k{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.09em;
   text-transform:uppercase;text-align:right;color:var(--muted)}
 .h-row.ok .h-k{color:var(--c3)}
+/* ══ Bitacora: el sistema ensena que ha decidido sobre si mismo ══ */
+.bit{background:var(--surface);border:1px solid var(--hair);border-radius:13px;
+  padding:16px 18px;display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.bit h3{margin:0;font-family:var(--display);font-weight:800;font-size:14px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.bit .sub{font-size:12.5px;color:var(--muted);max-width:74ch}
+.spark{display:flex;align-items:flex-end;gap:3px;height:46px}
+.spark i{flex:1;min-width:3px;border-radius:2px 2px 0 0;background:var(--c1);display:block;
+  position:relative}
+.spark i.base{background:var(--sunk)}
+.bit-row{display:grid;grid-template-columns:66px 1fr auto;gap:10px;align-items:baseline;
+  font-size:12.5px;padding:7px 0;border-top:1px solid var(--hair)}
+.bit-row:first-of-type{border-top:0}
+.bit-f{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.bit-m{color:var(--ink-2)}
+.bit-c{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:99px;
+  background:var(--sunk);color:var(--muted);white-space:nowrap}
+.bit-c.mov{background:var(--c1-wash);color:var(--c1)}
 .h-head{display:grid;grid-template-columns:44px minmax(130px,1fr) 62px 62px 74px;gap:10px;
   padding:0 13px 4px;font-family:var(--display);font-weight:700;font-size:9.5px;
   letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -344,7 +362,10 @@ function predict(la,lb,odds){
      empate el 22,0% frente al 22,7% real, con el acierto exacto empatado.
      DEBE COINCIDIR con PICK_U y coherent_top() en model.py: si no, la pagina ensenaria
      un marcador distinto del que quedo registrado antes del partido. */
-  const U=0.41;
+  /* El umbral lo ajusta autoajuste.py con el expediente y viaja en los datos. El 0.41
+     de reserva es el valor con el que se fijo en julio, por si la pagina se abre con un
+     archivo de datos viejo que aun no lo trae. */
+  const U=(typeof DATA!=="undefined"&&typeof DATA.pick_u==="number")?DATA.pick_u:0.41;
   const P=outcomes(g), gana=P.indexOf(Math.max(...P));
   const lado=t=>{const v=t.split("-").map(Number);return v[0]>v[1]?0:(v[0]===v[1]?1:2);};
   const dentro=P[gana]>=U?cells.filter(c=>lado(c[0])===gana):[];
@@ -378,12 +399,13 @@ let HISTORIAL=(typeof HIST!=="undefined"&&HIST)?HIST:[];
 function pintaMarcador(){
   const ex=$("v-ex"), su=$("v-11"), sub=$("v-ex-n");
   if(!ex||!su)return;
-  if(!HISTORIAL.length){ ex.textContent="—"; su.textContent="—";
+  const S=(typeof STATS!=="undefined"&&STATS.n)?STATS:null;
+  if(!S&&!HISTORIAL.length){ ex.textContent="—"; su.textContent="—";
     if(sub)sub.textContent="aún sin partidos resueltos"; return; }
-  const n=HISTORIAL.length;
+  const n=S?S.n:HISTORIAL.length;
   const pc=k=>(100*k/n).toFixed(1).replace(".",",")+"%";
-  ex.textContent=pc(HISTORIAL.filter(h=>h[4]===h[5]).length);
-  su.textContent=pc(HISTORIAL.filter(h=>h[5]==="1-1").length);
+  ex.textContent=pc(S?S.exacto:HISTORIAL.filter(h=>h[4]===h[5]).length);
+  su.textContent=pc(S?S.suelo:HISTORIAL.filter(h=>h[5]==="1-1").length);
   if(sub)sub.textContent="marcador exacto · "+n+" resueltos";
 }
 
@@ -494,6 +516,50 @@ function render(){
   $("more").style.display=left>0?"":"none";
   $("more").textContent=`Ver más · quedan ${left}`;
 }
+/* ── Bitacora del autoajuste ──
+   Cada mañana el sistema mide su propio expediente y decide si mover algun parametro.
+   La mayoria de los dias decide NO moverlo, porque la desviacion cabe en el ruido, y eso
+   tambien se enseña: un ajuste automatico que solo muestra los cambios oculta justo la
+   parte que demuestra que no esta persiguiendo rachas. */
+function pintaBitacora(){
+  const B=(typeof BITACORA!=="undefined")?BITACORA:[];
+  if(!B.length)return "";
+  const serie=[...B].reverse();               // en orden cronologico para la barra
+  const max=Math.max(...serie.map(d=>Math.max(d.ex,d.su)),0.01);
+  const barras=serie.map(d=>{
+    const h=Math.max(4,Math.round(100*d.ex/max));
+    const t=`${d.f}: ${(100*d.ex).toFixed(1).replace(".",",")}% de acierto sobre ${d.n}`;
+    return `<i style="height:${h}%" title="${t}"></i>`;
+  }).join("");
+  const hoy=serie[serie.length-1];
+  const pc=v=>(100*v).toFixed(1).replace(".",",")+"%";
+  const filas=B.slice(0,8).map(d=>{
+    const mov=d.cambios.length
+      ? d.cambios.map(c=>`${c.p} ${c.a}→${c.b}`).join(", ")
+      : "sin cambios";
+    return `<div class="bit-row"><span class="bit-f">${esc(d.f.slice(5))}</span>
+      <span class="bit-m">${esc(d.nota)}</span>
+      <span class="bit-c ${d.cambios.length?"mov":""}">${esc(mov)}</span></div>`;
+  }).join("");
+  return `<div class="bit">
+    <h3>Cómo se ajusta solo</h3>
+    <p class="sub">Cada mañana el sistema mide su propio expediente y decide si mover algún
+      parámetro. Solo lo mueve si la desviación supera el ruido y con un paso limitado, así
+      que <b>la mayoría de los días decide no tocar nada</b> — y eso también queda escrito:
+      un ajuste que solo enseña los cambios esconde justo la parte que demuestra que no está
+      persiguiendo rachas.</p>
+    <p class="sub">Aquí se cuenta solo la <b>versión vigente</b> del modelo, por eso el
+      número no coincide con el de arriba: aquel incluye las predicciones de versiones
+      anteriores, que se conservan sin reescribir porque se anotaron antes de jugarse.</p>
+    <div class="spark" aria-hidden="true">${barras}</div>
+    <p class="sub">Acierto de marcador exacto por revisión. Última: <b>${pc(hoy.ex)}</b>
+      sobre ${hoy.n} partidos, con el listón de «siempre 1-1» en ${pc(hoy.su)}.
+      El modelo espera ${String(hoy.ge).replace(".",",")} goles por partido y se juegan
+      ${String(hoy.gr).replace(".",",")}.</p>
+    ${filas}
+  </div>`;
+}
+
 /* ── Historial ── */
 function pintaHist(){
   const box=$("hist");
@@ -501,11 +567,17 @@ function pintaHist(){
     box.innerHTML='<p class="empty">Todavía no hay partidos resueltos. Aparecerán aquí en cuanto se jueguen.</p>';
     return;
   }
-  const n=HISTORIAL.length;
-  const ex=HISTORIAL.filter(h=>h[4]===h[5]).length;
-  const d11=HISTORIAL.filter(h=>h[5]==="1-1").length;
+  /* Las cifras salen de STATS, que cuenta el expediente ENTERO. La tabla de abajo se
+     recorta a las 400 mas recientes por tamaño de pagina, y medir sobre ese recorte
+     inflaba el acierto — 14,0% contra el 10,2% real, porque los ultimos dias fueron
+     mejores que la media. Recortar la tabla es una cosa; recortar la muestra, otra. */
+  const S=(typeof STATS!=="undefined"&&STATS.n)?STATS:null;
+  const n=S?S.n:HISTORIAL.length;
+  const ex=S?S.exacto:HISTORIAL.filter(h=>h[4]===h[5]).length;
+  const d11=S?S.suelo:HISTORIAL.filter(h=>h[5]==="1-1").length;
   const sg=t=>{const v=t.split("-").map(Number);return v[0]>v[1]?0:(v[0]===v[1]?1:2);};
-  const res=HISTORIAL.filter(h=>sg(h[4])===sg(h[5])).length;
+  const res=S?S.signo:HISTORIAL.filter(h=>sg(h[4])===sg(h[5])).length;
+  const fb=S&&S.forebet_n?S.forebet/S.forebet_n:null;
   const pc=k=>(100*k/n).toFixed(1).replace(".",",")+"%";
   box.innerHTML=
     `<div class="board" style="margin-bottom:10px">
@@ -515,7 +587,14 @@ function pintaHist(){
          <span class="val">${pc(d11)}</span><span class="sub">sin modelo · el listón</span></div>
        <div class="stat s2"><span class="k">Acierto 1X2</span>
          <span class="val">${pc(res)}</span><span class="sub">${res} de ${n}</span></div>
+       ${fb!==null?`<div class="stat s3"><span class="k">Forebet</span>
+         <span class="val">${(100*fb).toFixed(1).replace(".",",")}%</span>
+         <span class="sub">mismo periodo</span></div>`:""}
      </div>
+     ${HISTORIAL.length<n?`<p class="nota-orden" style="margin-bottom:10px">Las cifras de
+       arriba cuentan los <b>${n}</b> partidos resueltos. La tabla muestra los
+       <b>${HISTORIAL.length}</b> más recientes.</p>`:""}
+     ${pintaBitacora()}
      <div class="h-head"><span>Fecha</span><span>Partido</span><span>Pred.</span><span>Real</span><span></span></div>`
    + HISTORIAL.map(h=>{
       const ok=h[4]===h[5], casi=!ok&&sg(h[4])===sg(h[5]);
