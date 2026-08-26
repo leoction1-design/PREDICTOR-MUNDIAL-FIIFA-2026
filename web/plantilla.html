@@ -418,6 +418,31 @@ let HISTORIAL=(typeof HIST!=="undefined"&&HIST)?HIST:[];
    expediente real iba por detras — 7,8% contra 8,0% — asi que la cabecera presumia
    de algo que la pestana Resultados desmentia dos clics mas abajo. Ahora salen de las
    mismas predicciones resueltas que se enseñan ahi, y suben o bajan con ellas. */
+/* Avisa si los datos estan rancios.
+   El 26 de agosto el push del ciclo diario murio por un fallo de certificado y nadie se
+   entero: el commit quedo en local, la web publica siguio con los datos de la vispera y
+   la pagina los mostraba con total normalidad. Un sistema que se actualiza solo tiene que
+   decir cuando ha dejado de hacerlo — si no, no se distingue de uno congelado. */
+const HORAS_RANCIO=36;
+function avisaRancio(){
+  const S=(typeof STATS!=="undefined")?STATS:null;
+  const cont=$("sello");
+  if(!S||!S.generado||!cont)return;
+  const t=Date.parse(S.generado);
+  if(isNaN(t))return;
+  const horas=(Date.now()-t)/3600000;
+  if(horas<HORAS_RANCIO)return;
+  const dias=Math.floor(horas/24);
+  const cuanto=dias>=1?(dias===1?"más de un día":"más de "+dias+" días"):Math.round(horas)+" horas";
+  cont.textContent="· sin actualizar desde hace "+cuanto;
+  cont.style.background="var(--c1-wash)";
+  cont.style.color="var(--c1)";
+  cont.style.padding="2px 8px";
+  cont.style.borderRadius="99px";
+  cont.title="El ciclo diario no ha publicado datos nuevos. Las predicciones que se vean "
+    +"pueden ser de partidos ya jugados.";
+}
+
 function pintaMarcador(){
   const ex=$("v-ex"), su=$("v-11"), sub=$("v-ex-n");
   if(!ex||!su)return;
@@ -448,6 +473,7 @@ function rellenaFiltros(){
 }
 rellenaFiltros();
 pintaMarcador();
+avisaRancio();
 
 /* Ordenar por probabilidad obliga a predecir los 949, y volver a hacerlo en
    cada render sería absurdo. Se calcula una vez al arrancar y se reutiliza:
@@ -708,7 +734,7 @@ function refresca(){
       if(d.base){DATA.base=d.base;DATA.base_w=d.base_w||0;}
       DATA.gen=d.gen; if(d.entren)DATA.entren=d.entren;
       /* los desplegables se llenaron con las fechas y ligas viejas */
-      calculaPred(); rellenaFiltros(); pintaMarcador(); shown=35; render();
+      calculaPred(); rellenaFiltros(); pintaMarcador(); avisaRancio(); shown=35; render();
       if(!$("hist").hidden)pintaHist();
       /* el sello lo inserta construir_web.py junto al contador; si la pagina llego
          empaquetada en la APK diria la fecha de compilacion, que ya no es la de los
