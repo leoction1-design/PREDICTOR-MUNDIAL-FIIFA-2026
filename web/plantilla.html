@@ -128,6 +128,9 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--c1);outline-off
   text-transform:uppercase;padding:3px 8px;border-radius:99px}
 .src.k{background:var(--c1-wash);color:var(--c1)}
 .src.o{background:var(--sunk);color:var(--muted)}
+/* Verde, el mismo del acierto en el historial: es la unica insignia que se apoya en una
+   diferencia medida y significativa, y conviene que se distinga de las descriptivas. */
+.src.fi{background:color-mix(in srgb,var(--win) 16%,transparent);color:var(--win)}
 .m-fb{font-family:var(--mono);font-size:10px;color:var(--muted)}
 
 /* ══ La banda: espectro de probabilidad ══
@@ -306,6 +309,14 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
       de laboratorio, y ahora mismo la ventaja no está demostrada. En pruebas sobre partidos
       que el modelo no había visto sale por delante (12,5% contra 10,7% en 665 partidos), pero
       hasta que el historial de arriba lo confirme, eso es una promesa, no un resultado.</p>
+    <p><b>Banda fiable</b> no es una etiqueta de adorno: marca las predicciones cuya
+      probabilidad supera la mediana del expediente, y ahí el modelo tiene ventaja
+      <b>medida</b>. Partiendo las predicciones ya resueltas por la mitad, la mitad de
+      arriba acierta el 12,98% frente al 9,62% de «decir siempre 1-1»; la de abajo, el
+      8,71% frente al 10,27%. La diferencia entre ambas mitades da z = 2,06 — la primera
+      significativa que produce este sistema. Dicho claro: <b>en las predicciones sin esa
+      marca, el modelo no ha demostrado aportar nada</b> sobre una regla trivial. El corte
+      y las tasas se recalculan cada mañana con los partidos nuevos.</p>
     <p><b>Mercado</b> son partidos donde el reparto 1X2 sale de las cuotas y la forma del marcador
       del modelo. <b>Modelo</b> son los que no tenían cuotas. Los puntos junto a cada equipo son
       sus últimos cinco resultados, el más reciente primero.</p>
@@ -462,6 +473,21 @@ function filtered(){
     ? (a,b)=>PRED[b.i].top[0][1]-PRED[a.i].top[0][1]   // más concentrada primero
     : (a,b)=>(a[0]+a[1]).localeCompare(b[0]+b[1]));
 }
+/* Marca las predicciones que caen en la banda donde el modelo tiene ventaja MEDIDA.
+   Sobre las 895 resueltas de la version vigente, la mitad con mas probabilidad acierta el
+   12,98% contra un suelo de 9,62%, y la mitad baja el 8,71% contra 10,27% — z = +2,06,
+   la primera diferencia significativa del sistema. Presentarlas todas como iguales
+   escondia que en la mitad baja el modelo no aporta nada sobre decir «1-1». */
+function sello_fiable(p){
+  const B=(typeof DATA!=="undefined")?DATA.bandas:null;
+  if(!B||!B.corte)return "";
+  if(p<B.corte)return "";
+  const t=`En esta banda el modelo acierta el ${(100*B.alta.exacto).toFixed(1).replace(".",",")}%`
+    +` frente al ${(100*B.alta.suelo).toFixed(1).replace(".",",")}% de decir siempre 1-1,`
+    +` medido sobre ${B.alta.n} partidos ya jugados.`;
+  return `<span class="src fi" title="${t}">Banda fiable</span>`;
+}
+
 function matchHTML(r,conFecha){
   const[date,time,lg,home,away,la,lb,odds,fb,fH,fA]=r;
   const res=PRED[r.i],top=res.top,[ph,pd,pa]=res.p;
@@ -478,7 +504,7 @@ function matchHTML(r,conFecha){
       <div class="t"><span class="t-n b">${esc(away)}</span>${streak(fA)}</div></div>
     <div class="m-pick"><span class="m-score">${top[0][0]}</span>
       <span class="m-conf">${pc(top[0][1])}%<small>probable</small></span></div>
-    <div class="m-meta"><span class="src ${odds?"k":"o"}">${odds?"Mercado":"Modelo"}</span>
+    <div class="m-meta">${sello_fiable(top[0][1])}<span class="src ${odds?"k":"o"}">${odds?"Mercado":"Modelo"}</span>
       ${fb?`<span class="m-fb">Forebet ${fb}</span>`:""}</div>
     <div class="band">${band}</div>
     <div class="legend"><span class="alts">${alts}</span>
