@@ -128,6 +128,9 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--c1);outline-off
   text-transform:uppercase;padding:3px 8px;border-radius:99px}
 .src.k{background:var(--c1-wash);color:var(--c1)}
 .src.o{background:var(--sunk);color:var(--muted)}
+/* Violeta: ni la coral del modelo completo ni el gris del modelo solo — es una tercera
+   clase de prediccion, la de las copas, donde no hay modelo de equipos que valga. */
+.src.m{background:color-mix(in srgb,var(--c4) 15%,transparent);color:var(--c4)}
 /* Verde, el mismo del acierto en el historial: es la unica insignia que se apoya en una
    diferencia medida y significativa, y conviene que se distinga de las descriptivas. */
 .src.fi{background:color-mix(in srgb,var(--win) 16%,transparent);color:var(--win)}
@@ -283,6 +286,7 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
       <option value="">Todas las fuentes</option>
       <option value="mkt">Con cuotas</option>
       <option value="mod">Sin cuotas</option>
+      <option value="cup">Solo mercado (copas)</option>
     </select>
     <input type="search" id="f-q" placeholder="Buscar equipo…" aria-label="Buscar equipo">
     <span class="tally" id="tally"></span>
@@ -494,6 +498,7 @@ function filtered(){
   return ROWS.filter(r=>{
     if(d&&r[0]!==d)return false; if(l&&r[2]!==l)return false;
     if(s==="mkt"&&!r[7])return false; if(s==="mod"&&r[7])return false;
+    if(s==="cup"&&r[11]!=="mkt")return false;
     if(q&&!(r[3]+" "+r[4]).toLowerCase().includes(q))return false; return true;})
   .sort($("f-sort").value==="p"
     ? (a,b)=>PRED[b.i].top[0][1]-PRED[a.i].top[0][1]   // más concentrada primero
@@ -515,7 +520,7 @@ function sello_fiable(p){
 }
 
 function matchHTML(r,conFecha){
-  const[date,time,lg,home,away,la,lb,odds,fb,fH,fA]=r;
+  const[date,time,lg,home,away,la,lb,odds,fb,fH,fA,fuente]=r;
   const res=PRED[r.i],top=res.top,[ph,pd,pa]=res.p;
   const tail=Math.max(0,1-top.reduce((s,c)=>s+c[1],0));
   const band=top.map((c,i)=>
@@ -530,7 +535,12 @@ function matchHTML(r,conFecha){
       <div class="t"><span class="t-n b">${esc(away)}</span>${streak(fA)}</div></div>
     <div class="m-pick"><span class="m-score">${top[0][0]}</span>
       <span class="m-conf">${pc(top[0][1])}%<small>probable</small></span></div>
-    <div class="m-meta">${sello_fiable(top[0][1])}<span class="src ${odds?"k":"o"}">${odds?"Mercado":"Modelo"}</span>
+    <div class="m-meta">${sello_fiable(top[0][1])}<span class="src ${fuente==="mkt"?"m":(odds?"k":"o")}" title="${
+      fuente==="mkt"
+        ? "Copa o torneo sin liga que ajustar: no hay ataque ni defensa por equipo. El reparto 1X2 sale de las cuotas y el nivel de goles, de esa competición. Sobre 2717 partidos así acertó el 10,3% frente al 9,1% de decir siempre 1-1 y el 8,5% de Forebet."
+        : (odds ? "Modelo de equipos con el reparto 1X2 ajustado a las cuotas."
+                : "Solo modelo de equipos: esta competición no tenía cuotas.")
+    }">${fuente==="mkt"?"Solo mercado":(odds?"Mercado":"Modelo")}</span>
       ${fb?`<span class="m-fb">Forebet ${fb}</span>`:""}</div>
     <div class="band">${band}</div>
     <div class="legend"><span class="alts">${alts}</span>
