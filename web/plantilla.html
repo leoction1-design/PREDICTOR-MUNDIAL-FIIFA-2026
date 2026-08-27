@@ -406,6 +406,24 @@ const MESES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","
 const DIAS=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
 function fechaLarga(md){const[m,d]=md.split("-").map(Number);
   return DIAS[new Date(2026,m-1,d).getDay()]+" "+d+" "+MESES[m-1];}
+/* La hora llega como instante absoluto (Forebet la sirve en CEST aunque se le pida otra
+   zona) y se pinta en la del navegador. Antes viajaba como texto «21:00» y quien miraba
+   desde America veia las horas siete adelantadas: Barcelona - Athletic figuraba a las
+   21:00 cuando alli eran las 14:00. Si la fila es antigua y trae solo «HH:MM», se muestra
+   tal cual. */
+function horaLocal(v){
+  if(!v)return "";
+  if(v.length<=5)return v;
+  const d=new Date(v);
+  if(isNaN(d))return v.slice(11,16)||v;
+  return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", hour12:false});
+}
+function diaLocal(v,fallback){
+  if(!v||v.length<=5)return fallback;
+  const d=new Date(v);
+  if(isNaN(d))return fallback;
+  return String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
 const streak=s=>'<span class="streak" title="Últimos resultados, el más reciente primero">'+
   [...s].map(c=>`<i class="${c==="W"?"w":c==="D"?"d":"l"}"></i>`).join("")+'</span>';
 
@@ -460,6 +478,7 @@ function pintaMarcador(){
   if(sub)sub.textContent="marcador exacto · "+n+" resueltos";
 }
 
+let yaElegido=false;
 function rellenaFiltros(){
   $("v-n").textContent=ROWS.length;
   $("v-tr").textContent=DATA.entren.partidos.toLocaleString("es-ES");
@@ -471,8 +490,13 @@ function rellenaFiltros(){
     `<option value="${d}">${fechaLarga(d)} · ${ROWS.filter(r=>r[0]===d).length}</option>`).join("");
   $("f-league").innerHTML='<option value="">Todas las ligas</option>'+
     leagues.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join("");
-  /* conservar la eleccion del usuario si sigue existiendo tras el refresco */
+  /* La pagina trae diez dias de partidos y de entrada mostraba los 1982 mezclados, con
+     los 35 primeros ocupados por la madrugada sudamericana: Chelsea caia en la posicion
+     76 y Barcelona en la 83, fuera de la primera pantalla. Se abre en el primer dia
+     disponible —el de hoy—, que deja la jornada en unos 100 partidos y hace que lo
+     importante este a un clic. El desplegable sigue teniendo el resto. */
   if(dates.includes(fd))$("f-date").value=fd;
+  else if(dates.length&&!fd&&!yaElegido){$("f-date").value=dates[0];yaElegido=true;}
   if(leagues.includes(fl))$("f-league").value=fl;
 }
 rellenaFiltros();
@@ -491,7 +515,7 @@ function calculaPred(){
 }
 calculaPred();
 
-let shown=35;
+let shown=50;
 function filtered(){
   const d=$("f-date").value,l=$("f-league").value,s=$("f-src").value,
         q=$("f-q").value.trim().toLowerCase();
@@ -521,6 +545,7 @@ function sello_fiable(p){
 
 function matchHTML(r,conFecha){
   const[date,time,lg,home,away,la,lb,odds,fb,fH,fA,fuente]=r;
+  const hora=horaLocal(time);
   const res=PRED[r.i],top=res.top,[ph,pd,pa]=res.p;
   const tail=Math.max(0,1-top.reduce((s,c)=>s+c[1],0));
   const band=top.map((c,i)=>
@@ -529,7 +554,7 @@ function matchHTML(r,conFecha){
   const alts=top.slice(1,4).map((c,i)=>
     `<span><i class="r${i+2}"></i>${c[0]} ${pc(c[1])}%</span>`).join("");
   return `<article class="m">
-    <div class="m-when">${conFecha?`<span class="m-date">${date.slice(3)}/${date.slice(0,2)}</span>`:""}<span class="m-time">${time}</span><br><span class="m-lg">${esc(lg)}</span></div>
+    <div class="m-when">${conFecha?`<span class="m-date">${date.slice(3)}/${date.slice(0,2)}</span>`:""}<span class="m-time">${hora}</span><br><span class="m-lg">${esc(lg)}</span></div>
     <div class="m-teams">
       <div class="t"><span class="t-n">${esc(home)}</span>${streak(fH)}</div>
       <div class="t"><span class="t-n b">${esc(away)}</span>${streak(fA)}</div></div>
@@ -716,7 +741,7 @@ $("tab-p").addEventListener("click",()=>verPestana("p"));
 $("tab-h").addEventListener("click",()=>verPestana("h"));
 
 ["f-date","f-league","f-src","f-q","f-sort"].forEach(id=>
-  $(id).addEventListener("input",()=>{shown=35;render();}));
+  $(id).addEventListener("input",()=>{shown=50;render();}));
 $("more").addEventListener("click",()=>{shown+=70;render();});
 render();
 
@@ -744,7 +769,7 @@ function refresca(){
       if(d.base){DATA.base=d.base;DATA.base_w=d.base_w||0;}
       DATA.gen=d.gen; if(d.entren)DATA.entren=d.entren;
       /* los desplegables se llenaron con las fechas y ligas viejas */
-      calculaPred(); rellenaFiltros(); pintaMarcador(); avisaRancio(); shown=35; render();
+      calculaPred(); rellenaFiltros(); pintaMarcador(); avisaRancio(); shown=50; render();
       if(!$("hist").hidden)pintaHist();
       /* el sello lo inserta construir_web.py junto al contador; si la pagina llego
          empaquetada en la APK diria la fecha de compilacion, que ya no es la de los
