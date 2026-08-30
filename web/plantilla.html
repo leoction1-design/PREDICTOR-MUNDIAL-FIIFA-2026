@@ -313,14 +313,16 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
       de laboratorio, y ahora mismo la ventaja no está demostrada. En pruebas sobre partidos
       que el modelo no había visto sale por delante (12,5% contra 10,7% en 665 partidos), pero
       hasta que el historial de arriba lo confirme, eso es una promesa, no un resultado.</p>
-    <p><b>Banda fiable</b> no es una etiqueta de adorno: marca las predicciones cuya
-      probabilidad supera la mediana del expediente, y ahí el modelo tiene ventaja
-      <b>medida</b>. Partiendo las predicciones ya resueltas por la mitad, la mitad de
-      arriba acierta el 12,98% frente al 9,62% de «decir siempre 1-1»; la de abajo, el
-      8,71% frente al 10,27%. La diferencia entre ambas mitades da z = 2,06 — la primera
-      significativa que produce este sistema. Dicho claro: <b>en las predicciones sin esa
-      marca, el modelo no ha demostrado aportar nada</b> sobre una regla trivial. El corte
-      y las tasas se recalculan cada mañana con los partidos nuevos.</p>
+    <p><b>Más fiable</b> marca las predicciones cuya probabilidad supera la mediana del
+      expediente. Ahí acertamos más: partiendo lo ya resuelto por la mitad, la mitad de
+      arriba acierta el 11,6% y la de abajo el 7,7% — z = 2,8 sobre 2126 partidos, una
+      diferencia real. <b>La probabilidad ordena bien cuáles de nuestras predicciones
+      salen mejor</b>, y eso es lo que dice la insignia.</p>
+    <p>Lo que <b>no</b> dice, y conviene no confundir: que esas predicciones le ganen a
+      «decir siempre 1-1». En esa misma mitad alta el listón acierta el 11,0% y nosotros
+      el 11,6% — medio punto, dentro del ruido. Con una muestra menor esa ventaja parecía
+      de tres puntos y esta página llegó a anunciarla; al triplicar los partidos se
+      encogió. Se corrige cada mañana con lo que haya, hacia arriba o hacia abajo.</p>
     <p><b>Mercado</b> son partidos donde el reparto 1X2 sale de las cuotas y la forma del marcador
       del modelo. <b>Modelo</b> son los que no tenían cuotas. Los puntos junto a cada equipo son
       sus últimos cinco resultados, el más reciente primero.</p>
@@ -537,10 +539,18 @@ function sello_fiable(p){
   const B=(typeof DATA!=="undefined")?DATA.bandas:null;
   if(!B||!B.corte)return "";
   if(p<B.corte)return "";
-  const t=`En esta banda el modelo acierta el ${(100*B.alta.exacto).toFixed(1).replace(".",",")}%`
-    +` frente al ${(100*B.alta.suelo).toFixed(1).replace(".",",")}% de decir siempre 1-1,`
-    +` medido sobre ${B.alta.n} partidos ya jugados.`;
-  return `<span class="src fi" title="${t}">Banda fiable</span>`;
+  /* La insignia dice que ESTA prediccion es de las mas fiables NUESTRAS, no que le gane
+     al liston. Son dos cosas distintas y al principio se confundieron: con 2126 partidos
+     la mitad alta acierta el 11,6% y la baja el 7,7% (z = 2,8, diferencia real), pero la
+     mitad alta le saca a SU propio suelo solo medio punto, con chi2 = 0,13 — nada. El
+     texto tiene que sostener lo primero sin insinuar lo segundo. */
+  const pc=v=>(100*v).toFixed(1).replace(".",",");
+  const t=`De las predicciones con más probabilidad. En esta mitad acertamos el `
+    +`${pc(B.alta.exacto)}% y en la otra el ${pc(B.baja.exacto)}%, sobre ${B.n} partidos `
+    +`ya jugados: la probabilidad ordena bien cuáles salen mejor. Aparte: aquí «decir `
+    +`siempre 1-1» acierta el ${pc(B.alta.suelo)}%, así que ganarle todavía no está `
+    +`demostrado.`;
+  return `<span class="src fi" title="${t}">Más fiable</span>`;
 }
 
 function matchHTML(r,conFecha){
