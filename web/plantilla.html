@@ -131,6 +131,8 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--c1);outline-off
 /* Violeta: ni la coral del modelo completo ni el gris del modelo solo — es una tercera
    clase de prediccion, la de las copas, donde no hay modelo de equipos que valga. */
 .src.m{background:color-mix(in srgb,var(--c4) 15%,transparent);color:var(--c4)}
+/* Ambar: el marcador no lo pone nuestro modelo sino Forebet, y eso tiene que verse. */
+.src.f{background:color-mix(in srgb,var(--c2) 18%,transparent);color:var(--c2)}
 /* Verde, el mismo del acierto en el historial: es la unica insignia que se apoya en una
    diferencia medida y significativa, y conviene que se distinga de las descriptivas. */
 .src.fi{background:color-mix(in srgb,var(--win) 16%,transparent);color:var(--win)}
@@ -553,10 +555,35 @@ function sello_fiable(p){   /* p llega ya corregida por la ruta */
   return `<span class="src fi" title="${t}">Más fiable</span>`;
 }
 
+/* Probabilidad de una casilla concreta de la rejilla, para cuando el marcador que se
+   enseña no es el que encabeza nuestro top. */
+function probCelda(la,lb,odds,marc){
+  const v=marc.split("-").map(Number);
+  const r=predict(la,lb,odds||null);
+  const enc=r.top.find(c=>c[0]===marc);
+  return enc?enc[1]:0.02;      /* fuera del top-5: probabilidad baja, se usa un minimo */
+}
 function matchHTML(r,conFecha){
   const[date,time,lg,home,away,la,lb,odds,fb,fH,fA,fuente]=r;
   const hora=horaLocal(time);
-  const res=PRED[r.i],top=res.top,[ph,pd,pa]=res.p;
+  /* La probabilidad se corrige por lo que esa ruta cumple de verdad en el expediente.
+     Sin cuotas el modelo anunciaba 10,8% y acertaba 7,4%: era el unico sitio donde la app
+     prometia mas de lo que daba. Escalar el numero no cambia el marcador, solo deja de
+     exagerar. */
+  const fcal=(typeof DATA!=="undefined"&&DATA.calib&&DATA.calib[fuente])||1;
+  const res=PRED[r.i];
+  /* En la ruta «fb» el marcador que se enseña es el de Forebet, no el de nuestra rejilla:
+     sin cuotas ellos aciertan 11,5% y nosotros 7,1% sobre 523 partidos fuera de muestra
+     (McNemar 6,45), y las cinco variantes hibridas que se probaron salieron peor. La
+     probabilidad sigue saliendo de nuestra rejilla, que es lo unico nuestro que queda ahi.
+     Se coloca al frente sin duplicarlo en las alternativas. */
+  let top=res.top;
+  if(fuente==="fb"&&fb&&/^\d-\d$/.test(fb)){
+    const enc=top.find(c=>c[0]===fb);
+    const p=enc?enc[1]:probCelda(la,lb,odds,fb);
+    top=[[fb,p]].concat(top.filter(c=>c[0]!==fb).slice(0,4));
+  }
+  const [ph,pd,pa]=res.p;
   const tail=Math.max(0,1-top.reduce((s,c)=>s+c[1],0));
   const band=top.map((c,i)=>
     `<span class="r${i+1}" style="width:${100*c[1]}%" title="${c[0]} · ${pc(c[1])}%"></span>`).join("")
@@ -570,12 +597,14 @@ function matchHTML(r,conFecha){
       <div class="t"><span class="t-n b">${esc(away)}</span>${streak(fA)}</div></div>
     <div class="m-pick"><span class="m-score">${top[0][0]}</span>
       <span class="m-conf">${pc(top[0][1]*fcal)}%<small>probable</small></span></div>
-    <div class="m-meta">${sello_fiable(top[0][1]*fcal)}<span class="src ${fuente==="mkt"?"m":(odds?"k":"o")}" title="${
+    <div class="m-meta">${sello_fiable(top[0][1]*fcal)}<span class="src ${fuente==="mkt"?"m":fuente==="fb"?"f":(odds?"k":"o")}" title="${
       fuente==="mkt"
         ? "Copa o torneo sin liga que ajustar: no hay ataque ni defensa por equipo. El reparto 1X2 sale de las cuotas y el nivel de goles, de esa competición. Sobre 2717 partidos así acertó el 10,3% frente al 9,1% de decir siempre 1-1 y el 8,5% de Forebet."
-        : (odds ? "Modelo de equipos con el reparto 1X2 ajustado a las cuotas."
-                : "Solo modelo de equipos: esta competición no tenía cuotas.")
-    }">${fuente==="mkt"?"Solo mercado":(odds?"Mercado":"Modelo")}</span>
+        : fuente==="fb"
+          ? "Sin cuotas nuestro modelo rinde peor que Forebet: 7,1% de acierto frente a su 11,5% sobre 523 partidos fuera de muestra (McNemar 6,45). Aquí el marcador es el suyo, no el nuestro; la probabilidad sí sale de nuestra rejilla."
+          : (odds ? "Modelo de equipos con el reparto 1X2 ajustado a las cuotas."
+                  : "Solo modelo de equipos: esta competición no tenía cuotas.")
+    }">${fuente==="mkt"?"Solo mercado":fuente==="fb"?"Forebet":(odds?"Mercado":"Modelo")}</span>
       ${fb?`<span class="m-fb">Forebet ${fb}</span>`:""}</div>
     <div class="band">${band}</div>
     <div class="legend"><span class="alts">${alts}</span>
