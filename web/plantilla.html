@@ -535,7 +535,7 @@ function filtered(){
    12,98% contra un suelo de 9,62%, y la mitad baja el 8,71% contra 10,27% — z = +2,06,
    la primera diferencia significativa del sistema. Presentarlas todas como iguales
    escondia que en la mitad baja el modelo no aporta nada sobre decir «1-1». */
-function sello_fiable(p){
+function sello_fiable(p){   /* p llega ya corregida por la ruta */
   const B=(typeof DATA!=="undefined")?DATA.bandas:null;
   if(!B||!B.corte)return "";
   if(p<B.corte)return "";
@@ -569,8 +569,8 @@ function matchHTML(r,conFecha){
       <div class="t"><span class="t-n">${esc(home)}</span>${streak(fH)}</div>
       <div class="t"><span class="t-n b">${esc(away)}</span>${streak(fA)}</div></div>
     <div class="m-pick"><span class="m-score">${top[0][0]}</span>
-      <span class="m-conf">${pc(top[0][1])}%<small>probable</small></span></div>
-    <div class="m-meta">${sello_fiable(top[0][1])}<span class="src ${fuente==="mkt"?"m":(odds?"k":"o")}" title="${
+      <span class="m-conf">${pc(top[0][1]*fcal)}%<small>probable</small></span></div>
+    <div class="m-meta">${sello_fiable(top[0][1]*fcal)}<span class="src ${fuente==="mkt"?"m":(odds?"k":"o")}" title="${
       fuente==="mkt"
         ? "Copa o torneo sin liga que ajustar: no hay ataque ni defensa por equipo. El reparto 1X2 sale de las cuotas y el nivel de goles, de esa competición. Sobre 2717 partidos así acertó el 10,3% frente al 9,1% de decir siempre 1-1 y el 8,5% de Forebet."
         : (odds ? "Modelo de equipos con el reparto 1X2 ajustado a las cuotas."
