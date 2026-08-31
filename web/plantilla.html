@@ -320,8 +320,13 @@ button:focus-visible{outline:2px solid var(--c4);outline-offset:3px}
       arriba acierta el 11,6% y la de abajo el 7,7% — z = 2,8 sobre 2126 partidos, una
       diferencia real. <b>La probabilidad ordena bien cuáles de nuestras predicciones
       salen mejor</b>, y eso es lo que dice la insignia.</p>
-    <p>Lo que <b>no</b> dice, y conviene no confundir: que esas predicciones le ganen a
-      «decir siempre 1-1». En esa misma mitad alta el listón acierta el 11,0% y nosotros
+    <p><b>Muy fiable</b> es más estrecho y más fuerte: nuestro 10&nbsp;% más seguro. Ahí
+      sí le ganamos al listón — 17,8&nbsp;% contra 8,9&nbsp;% sobre 225 partidos jugados,
+      y gana en 4 de las 5 jornadas con muestra suficiente. Casi siempre son partidos de
+      pocos goles, donde el marcador es más previsible. Es el único tramo del sistema con
+      ventaja demostrable, y se recalcula cada mañana: si se desinfla, esta página lo dirá.</p>
+    <p>Lo que <b>Más fiable</b> <b>no</b> dice, y conviene no confundir: que esas
+      predicciones le ganen a «decir siempre 1-1». En esa misma mitad alta el listón acierta el 11,0% y nosotros
       el 11,6% — medio punto, dentro del ruido. Con una muestra menor esa ventaja parecía
       de tres puntos y esta página llegó a anunciarla; al triplicar los partidos se
       encogió. Se corrige cada mañana con lo que haya, hacia arriba o hacia abajo.</p>
@@ -547,6 +552,18 @@ function sello_fiable(p){   /* p llega ya corregida por la ruta */
      mitad alta le saca a SU propio suelo solo medio punto, con chi2 = 0,13 — nada. El
      texto tiene que sostener lo primero sin insinuar lo segundo. */
   const pc=v=>(100*v).toFixed(1).replace(".",",");
+  /* El decil superior es distinto: ahi SI le ganamos al liston. Corte fijo al 10%, no
+     buscado — probar varios cortes y quedarse con el que sale significativo infla los
+     falsos positivos. Encontrado el 31/08/2026: 17,8% contra un suelo de 8,9%, chi2 = 6,0,
+     ganando en 4 de las 5 jornadas con muestra. Son partidos de pocos goles (1-0, 0-0,
+     0-1), donde la rejilla se concentra y la moda acierta mas. */
+  if(B.decil && B.decil.corte && p>=B.decil.corte && B.decil.chi2>3.84){
+    const td=`Nuestro 10% más seguro. Aquí acertamos el ${pc(B.decil.exacto)}% contra el `
+      +`${pc(B.decil.suelo)}% de «decir siempre 1-1», sobre ${B.decil.n} partidos ya `
+      +`jugados. Es el único tramo donde le ganamos al listón de forma medible. Casi `
+      +`siempre son partidos de pocos goles.`;
+    return `<span class="src fi" title="${td}">Muy fiable</span>`;
+  }
   const t=`De las predicciones con más probabilidad. En esta mitad acertamos el `
     +`${pc(B.alta.exacto)}% y en la otra el ${pc(B.baja.exacto)}%, sobre ${B.n} partidos `
     +`ya jugados: la probabilidad ordena bien cuáles salen mejor. Aparte: aquí «decir `
